@@ -15,7 +15,9 @@
 #include <afxext.h>         // MFC 확장입니다.
 
 
-
+// 윈도우 소켓 관련 헤더파일, 라이브러리
+#include <WinSock2.h>
+#pragma comment (lib, "ws2_32.lib")
 
 
 #ifndef _AFX_NO_OLE_SUPPORT

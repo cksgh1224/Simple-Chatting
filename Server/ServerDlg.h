@@ -8,6 +8,11 @@
 // CServerDlg 대화 상자
 class CServerDlg : public CDialogEx
 {
+private:
+	SOCKET mh_listen_socket; // listen socket : 클라이언트의 접속을 받아주는 소켓
+
+	
+
 // 생성입니다.
 public:
 	CServerDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
