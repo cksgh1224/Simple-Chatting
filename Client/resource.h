@@ -1,8 +1,8 @@
 ﻿//{{NO_DEPENDENCIES}}
 // Microsoft Visual C++에서 생성한 포함 파일입니다.
-// Server.rc에서 사용되고 있습니다.
+// Client.rc에서 사용되고 있습니다.
 //
-#define IDD_SERVER_DIALOG               102
+#define IDD_CLIENT_DIALOG               102
 #define IDR_MAINFRAME                   128
 
 // Next default values for new objects
