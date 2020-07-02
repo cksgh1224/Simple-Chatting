@@ -19,6 +19,10 @@ private:
 public:
 	CServerDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
 
+	void AcceptProcess(SOCKET parm_h_socket); // 클라이언트 접속 시도 처리
+	void ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag); // 클라이언트의 접속 해제
+
+
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_SERVER_DIALOG };
