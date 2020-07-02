@@ -21,6 +21,8 @@ CServerDlg::CServerDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_SERVER_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+
+	m_client_count = 0;
 }
 
 void CServerDlg::DoDataExchange(CDataExchange* pDX)
@@ -61,7 +63,7 @@ BOOL CServerDlg::OnInitDialog()
 	// listen() : 클라이언트의 연결 요청 대기 
 	listen(mh_listen_socket, 1); // 1: 대기자수 (여러 클라이언트가 동시에 접속하더라도 한번에 1개만 처리)
 
-	// accept : 클라이언트 연결 수립 (실제 클라이언트의 접속) -> 비동기 방식으로 처리 (클라이언트가 접속할 때 까지 이 함수에서 못 빠져나온다 => 비동기 처리를 해줘야함)
+	// accept : 클라이언트 연결 수립 (실제 클라이언트의 접속) -> 클라이언트가 접속할 때 까지 이 함수에서 못 빠져나온다 -> 비동기 처리를 해줘야함
 	// WSAAsyncSelect : 특정 소켓에 비동기 설정
 	WSAAsyncSelect(mh_listen_socket, m_hWnd, 27001, FD_ACCEPT); // 이 소켓(mh_listen_socket)에 클라이언트가 접속하려고 한다면(FD_ACCEPT) 이 윈도우(m_hWnd)에게 27001 메시지를 준다 => WindowProc에서 처리 (m_hWnd : 대화상자의 윈도우 핸들)
 	
@@ -106,3 +108,36 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+// WindowProc: 윈도우에 메시지가 들어왔을 때 호출되는 함수
+LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
+	// wParam: 메시지가 발생하게된 소켓의 핸들(mh_listen_socket)
+	// lParam: 소켓에 에러가 있는지(WSAGETSELECTERROR) or 어떤 이벤트 때문에 발생했는지(WSAGETSELECTEVENT)
+
+	if (27001 == message) { // // FD_ACCEPT (소켓에 클라이언트가 접속하려고 할 때 발생)
+		if (MAX_CLIENT_COUNT > m_client_count) {
+			SOCKET h_socket = (SOCKET)wParam; // h_socket -> mh_listen_socket 핸들값과 동일
+
+			// accept() : 클라이언트 연결 수립
+			// listen_socket의 복제를 만들어서 반환 -> 클라이언트와 실제 통신  (listen_socket은 클라이언트의 접속만 받음)
+			struct sockaddr_in client_addr;
+			int sockaddr_in_size = sizeof(client_addr);
+			mh_client_list[m_client_count] = accept(h_socket, (LPSOCKADDR)&client_addr, &sockaddr_in_size); // mh_client_list[] : 실제 통신할 소켓
+
+			WSAAsyncSelect(mh_client_list[m_client_count], m_hWnd, 27002, FD_READ | FD_CLOSE); // recv, close -> 비동기 처리
+
+			m_client_count++;
+
+			// 접속한 클라이언트의 ip
+			CString ip_address; // CString은 MFC에서 문자열을 처리를 아주 쉽게 처리할 수 있도록 제공해주는 클래스
+			ip_address = inet_ntoa(client_addr.sin_addr);
+			MessageBox(ip_address, L"새로운 클라이언트가 접속했습니다", MB_OK); // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다
+		}
+		else {
+
+		}
+	}
+
+	return CDialogEx::WindowProc(message, wParam, lParam);
+}

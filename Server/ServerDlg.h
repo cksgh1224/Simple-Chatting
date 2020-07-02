@@ -4,6 +4,7 @@
 
 #pragma once
 
+#define MAX_CLIENT_COUNT 5 // 서버에 접속 가능한 클라이언트 수
 
 // CServerDlg 대화 상자
 class CServerDlg : public CDialogEx
@@ -11,7 +12,8 @@ class CServerDlg : public CDialogEx
 private:
 	SOCKET mh_listen_socket; // listen socket : 클라이언트의 접속을 받아주는 소켓
 
-	
+	SOCKET mh_client_list[MAX_CLIENT_COUNT]; // 클라이언트 배열
+	int m_client_count; // 현재 연결된 클라이언트 수
 
 // 생성입니다.
 public:
@@ -35,4 +37,5 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 };
