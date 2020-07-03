@@ -28,6 +28,7 @@ CServerDlg::CServerDlg(CWnd* pParent /*=nullptr*/)
 void CServerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_LIST1, m_event_list);
 }
 
 BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
@@ -41,6 +42,8 @@ END_MESSAGE_MAP()
 BOOL CServerDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
+
+
 
 	// 이 대화 상자의 아이콘을 설정합니다.  응용 프로그램의 주 창이 대화 상자가 아닐 경우에는
 	//  프레임워크가 이 작업을 자동으로 수행합니다.
@@ -62,6 +65,7 @@ BOOL CServerDlg::OnInitDialog()
 	
 	// listen() : 클라이언트의 연결 요청 대기 
 	listen(mh_listen_socket, 1); // 1: 대기자수 (여러 클라이언트가 동시에 접속하더라도 한번에 1개만 처리)
+	AddEventString(L"클라이언트의 접속을 허락합니다...");
 
 	// accept : 클라이언트 연결 수립 (실제 클라이언트의 접속) -> 클라이언트가 접속할 때 까지 이 함수에서 못 빠져나온다 -> 비동기 처리를 해줘야함
 	// WSAAsyncSelect : 특정 소켓에 비동기 설정
@@ -109,6 +113,13 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 }
 
 
+// 리스트 박스 메시지 추가
+void CServerDlg::AddEventString(CString parm_string)
+{
+	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
+	m_event_list.SetCurSel(index); // 추가한 곳(index) 커서 활성화
+}
+
 // 클라이언트 접속 시도 처리 (FD_ACCEPT)
 void CServerDlg::AcceptProcess(SOCKET parm_h_socket)
 {
@@ -124,12 +135,14 @@ void CServerDlg::AcceptProcess(SOCKET parm_h_socket)
 
 		WSAAsyncSelect(mh_client_list[m_client_count], m_hWnd, 27002, FD_READ | FD_CLOSE); // recv, close -> 비동기 처리
 
-		m_client_count++;
-
 		// 접속한 클라이언트의 ip
 		CString ip_address; // CString은 MFC에서 문자열을 처리를 아주 쉽게 처리할 수 있도록 제공해주는 클래스
 		ip_address = inet_ntoa(client_addr.sin_addr);
-		MessageBox(ip_address, L"새로운 클라이언트가 접속했습니다", MB_OK); // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다
+		wcscpy(m_client_ip[m_client_count], ip_address); // 접속한 사용자의 ip를 배열에 보관 (wcscpy: strcpy의 유니코드 버전)
+		m_client_count++;
+
+		// MessageBox(ip_address, L"새로운 클라이언트가 접속했습니다", MB_OK); // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다
+		AddEventString(L"새로운 클라이언트가 접속했습니다 : " + ip_address);
 	}
 	else // 접속 인원 초과
 	{
@@ -156,10 +169,44 @@ void CServerDlg::ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag)
 		{
 			m_client_count--;
 			if (i != m_client_count) // 배열의 마지막 소켓이 아니면
+			{
 				mh_client_list[i] = mh_client_list[m_client_count]; // mh_client_list 배열에서 해제할 소켓 위치에 배열의 마지막 소켓을 넣는다
+				wcscpy(m_client_ip[i], m_client_ip[m_client_count]);
+			}		
 		}
 	}
 }
+
+// recv (body 데이터 읽기)
+void CServerDlg::ReceiveData(SOCKET parm_h_socket, char* p_body_data, unsigned short body_size)
+{
+	int current_size, total_size = 0, retry_count = 0;
+	// current_size: recv 함수의 반환값을 저장할 변수 (recv함수는 읽은 값 만큼 반환)
+	// total_size: recv함수의 반환값을 모두 더해서 전체 데이터를 다 받았는지 확인할 변수 (total_size가 body_size와 같으면 다 읽은거)					 
+	// retry_count: 재시도 값 (recv에서 에러 발생시)
+
+	// recv() 함수: 1000byte 데이터를 읽어라 -> 한번에 1000byte 다 읽지 못할 수도 있다 -> 400byte 읽고 반환, 600byte 읽고 반환) -> 반복문 이용
+	while (total_size < body_size) // 데이터를 다 읽지 못했으면
+	{
+		current_size = recv(parm_h_socket, p_body_data + total_size, body_size - total_size, 0); // h_socket으로부터 (p_body_data + total_size) 메모리 위치에서 (body_size - total_size)만큼 데이터를 읽어서 저장해라
+
+		if (current_size == SOCKET_ERROR) // 수신중에 에러가 발생하면 SOCKET_ERROR라는 값을 반환한다
+		{
+			retry_count++;
+			Sleep(50); // 에러 발생시 0.05초 쉬었다가 다시 시도
+			if (retry_count > 5) // 에러가 한번 발생했다고 바로 끊어버리지 않고, 6번 재시도 하겠다
+				break;
+		}
+		else
+		{
+			retry_count = 0;
+			total_size += current_size;
+		}
+	}
+}
+
+
+
 
 
 // WindowProc: 윈도우에 메시지가 들어왔을 때 호출되는 함수
@@ -203,7 +250,16 @@ LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 				// body 읽어들이기 
 				if (body_size > 0) // body(데이터)가 없을 수도 있기 때문에 체크
 				{
+					char* p_body_data = new char[body_size]; // body_size만큼 메모리 동적 할당
 
+					ReceiveData(h_socket, p_body_data, body_size); // body 데이터 읽기
+					
+					if (network_message_id == 1)
+					{
+						// 실제로 클라이언트가 보내준 데이터(p_body_data)를 처리 
+					}
+
+					delete[] p_body_data;
 				}
 
 				WSAAsyncSelect(h_socket, m_hWnd, 27002, FD_READ | FD_CLOSE); // 데이터를 다 읽은 후 비동기 재설정
