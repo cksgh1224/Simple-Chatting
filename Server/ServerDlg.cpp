@@ -37,13 +37,19 @@ BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 
+// 리스트 박스 메시지 추가
+void CServerDlg::AddEventString(CString parm_string)
+{
+	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
+	m_event_list.SetCurSel(index); // 추가한 곳(index) 커서 활성화
+}
+
+
 // CServerDlg 메시지 처리기
 
 BOOL CServerDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
-
 
 	// 이 대화 상자의 아이콘을 설정합니다.  응용 프로그램의 주 창이 대화 상자가 아닐 경우에는
 	//  프레임워크가 이 작업을 자동으로 수행합니다.
@@ -71,8 +77,6 @@ BOOL CServerDlg::OnInitDialog()
 	// WSAAsyncSelect : 특정 소켓에 비동기 설정
 	WSAAsyncSelect(mh_listen_socket, m_hWnd, 27001, FD_ACCEPT); // 이 소켓(mh_listen_socket)에 클라이언트가 접속하려고 한다면(FD_ACCEPT) 이 윈도우(m_hWnd)에게 27001 메시지를 준다 => WindowProc에서 처리 (m_hWnd : 대화상자의 윈도우 핸들)
 	
-	
-
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 
@@ -112,13 +116,6 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-// 리스트 박스 메시지 추가
-void CServerDlg::AddEventString(CString parm_string)
-{
-	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
-	m_event_list.SetCurSel(index); // 추가한 곳(index) 커서 활성화
-}
 
 // 클라이언트 접속 시도 처리 (FD_ACCEPT)
 void CServerDlg::AcceptProcess(SOCKET parm_h_socket)
