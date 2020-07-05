@@ -270,6 +270,7 @@ LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else // FD_CLOSE (클라이언트의 접속 해제)
 		{
 			ClientCloseProcess(h_socket, 0);
+			AddEventString(L"클라이언트가 접속을 해제했습니다.");
 		}
 
 	}

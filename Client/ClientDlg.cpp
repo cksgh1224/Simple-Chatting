@@ -32,6 +32,7 @@ void CClientDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CClientDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_SEND_BTN, &CClientDlg::OnBnClickedSendBtn)
 END_MESSAGE_MAP()
 
 
@@ -112,6 +113,92 @@ HCURSOR CClientDlg::OnQueryDragIcon()
 }
 
 
+// 서버 접속 처리 함수
+void CClientDlg::ConnectProcess(LPARAM lParam)
+{
+	if (WSAGETSELECTERROR(lParam) == 0) // 에러가 없다 (서버 접속 성공)
+	{
+		// 서버에 접속 성공 -> 비동기를 새로 건다 (FD_READ: 서버에서 데이터를 보냄, FD_CLOSE: 서버가 연결을 끊음)
+		WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_READ | FD_CLOSE);
+		AddEventString(L"서버에 접속했습니다!");
+	}
+	else // 서버 접속 실패
+	{
+		DestroySocket();
+		AddEventString(L"서버에 접속할 수 없습니다!");
+	}
+}
+
+// 소켓 해제 (즉시 종료)
+void CClientDlg::DestroySocket()
+{
+	LINGER temp_linger = { TRUE, 0 };
+	setsockopt(mh_socket, SOL_SOCKET, SO_LINGER, (char*)&temp_linger, sizeof(temp_linger));
+
+	closesocket(mh_socket); // 소켓을 닫는다. closesocket을 했다고 해서 mh_socket이 초기화되는 것은 아님
+	mh_socket = INVALID_SOCKET; // 소켓을 확실히 닫았다. (mh_socket 초기화) (mh_socket에 INVALID_SOCKET이 들어있으면 소켓이 끊어진 상태, 그렇지 않으면 접속되어 있는 상태)
+}
+
+
+// 데이터 읽기 (헤더 + 바디)
+void CClientDlg::ReadFrameData()
+{
+	char key, message_id;
+	recv(mh_socket, &key, 1, 0);
+	if (key == 27)
+	{
+		unsigned short body_size;
+		recv(mh_socket, (char*)&body_size, sizeof(body_size), 0);
+		recv(mh_socket, &message_id, 1, 0);
+
+		// body 데이터 읽기
+		if (body_size > 0)
+		{
+			char* p_body_data = new char[body_size];
+
+			ReceiveData(p_body_data, body_size); 
+
+			if (message_id == 1)
+			{
+				// 서버에서 보낸 데이터 처리
+			}
+
+			delete[] p_body_data;
+		}
+
+	}
+	else // 신뢰할 수 없는 프로토콜 (잘못된 데이터) 
+	{
+		DestroySocket();
+		AddEventString(L"잘못된 프로토콜 입니다.");
+	}
+}
+
+
+// body 데이터 읽기
+void CClientDlg::ReceiveData(char* p_body_data, unsigned short body_size)
+{
+	int current_size, total_size = 0, retry_count = 0;
+
+	while (total_size < body_size)
+	{
+		current_size = recv(mh_socket, p_body_data + total_size, body_size - total_size, 0);
+
+		if (current_size == SOCKET_ERROR)
+		{
+			retry_count++;
+			Sleep(50);
+			if (retry_count > 5)
+				break;
+		}
+		else
+		{
+			retry_count = 0;
+			total_size += current_size;
+		}
+	}
+}
+
 
 // WindowProc: 윈도우에 메시지가 들어왔을 때 호출되는 함수
 LRESULT CClientDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
@@ -121,21 +208,49 @@ LRESULT CClientDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 	if (message == 27001) // FD_CONNECT (접속 시도에 대한 결과 : 성공 or 실패)
 	{
-		if (WSAGETSELECTERROR(lParam) == 0) // 에러가 없다 (서버 접속 성공)
+		ConnectProcess(lParam);
+	}
+	else if(message == 27002) // FD_READ or FD_CLOSE
+	{
+		if (WSAGETSELECTEVENT(lParam) == FD_READ) // FD_READ
 		{
-			// 서버에 접속 성공 -> 비동기를 새로 건다 (FD_READ: 서버에서 데이터를 보냄, FD_CLOSE: 서버가 연결을 끊음)
-			WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_READ | FD_CLOSE); 
-			AddEventString(L"서버에 접속했습니다!");
+			WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_CLOSE); // 데이터 끊어읽기를 할 때(FD_READ) 27002메시지가 발생하지 않도록 비동기를 다시 걸음
+			
+			ReadFrameData();
+
+			if (mh_socket != INVALID_SOCKET) // key == 27
+			{
+				WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_READ | FD_CLOSE); // 데이터를 다 읽은 후 비동기를 다시 건다
+			}
 		}
-		else // 서버 접속 실패
+		else // FD_CLOSE
 		{
-			closesocket(mh_socket); // 소켓을 닫는다 closesocket을 했다고 해서 mh_socket이 초기화되는 것은 아님
-			mh_socket = INVALID_SOCKET; // 소켓을 확실히 닫았다 (mh_socket 초기화) (mh_socket에 INVALID_SOCKET이 들어있으면 소켓이 끊어진 상태, 그렇지 않으면 접속되어 있는 상태)
-			AddEventString(L"서버에 접속할 수 없습니다!");
+			DestroySocket();
+			AddEventString(L"서버에서 연결을 해제하였습니다.");
 		}
-		
 	}
 
-
 	return CDialogEx::WindowProc(message, wParam, lParam);
+}
+
+
+// 데이터 전송 (send)
+void CClientDlg::SendFrameData(SOCKET parm_h_socket, const void* parm_p_data, int parm_size)
+{
+	// 데이터 전송(send)도 데이터 수신(recv)처럼 헤더, 바디로 구분해서 보낸다
+	// const void* parm_p_data: 채팅 데이터, 파일, 구조체.. 여러가지 데이터를 보낼 수 있기 떄문에 void* 사용, 데이터 전송만 하기 때문에 값을 바꿀 필요x -> const
+
+	// 32분 20초
+	// https://blog.naver.com/tipsware/220142420870
+
+}
+
+// '전송' 버튼 이벤트
+void CClientDlg::OnBnClickedSendBtn()
+{
+	CString str;
+	GetDlgItemText(IDC_EDIT1, str); // Edit Control의 값을 str로 가져옴 (채팅 메시지)
+
+
+
 }
