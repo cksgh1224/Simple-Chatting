@@ -33,6 +33,7 @@ BEGIN_MESSAGE_MAP(CClientDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_SEND_BTN, &CClientDlg::OnBnClickedSendBtn)
+	ON_BN_CLICKED(IDOK, &CClientDlg::OnBnClickedOk)
 END_MESSAGE_MAP()
 
 
@@ -127,6 +128,8 @@ void CClientDlg::ConnectProcess(LPARAM lParam)
 		DestroySocket();
 		AddEventString(L"서버에 접속할 수 없습니다!");
 	}
+
+	GotoDlgCtrl(GetDlgItem(IDC_EDIT1)); // Edit Control 로 포커스 이동
 }
 
 // 소켓 해제 (즉시 종료)
@@ -138,7 +141,6 @@ void CClientDlg::DestroySocket()
 	closesocket(mh_socket); // 소켓을 닫는다. closesocket을 했다고 해서 mh_socket이 초기화되는 것은 아님
 	mh_socket = INVALID_SOCKET; // 소켓을 확실히 닫았다. (mh_socket 초기화) (mh_socket에 INVALID_SOCKET이 들어있으면 소켓이 끊어진 상태, 그렇지 않으면 접속되어 있는 상태)
 }
-
 
 // 데이터 읽기 (헤더 + 바디)
 void CClientDlg::ReadFrameData()
@@ -161,6 +163,7 @@ void CClientDlg::ReadFrameData()
 			if (message_id == 1)
 			{
 				// 서버에서 보낸 데이터 처리
+				AddEventString((wchar_t*)p_body_data);
 			}
 
 			delete[] p_body_data;
@@ -173,7 +176,6 @@ void CClientDlg::ReadFrameData()
 		AddEventString(L"잘못된 프로토콜 입니다.");
 	}
 }
-
 
 // body 데이터 읽기
 void CClientDlg::ReceiveData(char* p_body_data, unsigned short body_size)
@@ -257,15 +259,34 @@ void CClientDlg::SendFrameData(SOCKET parm_h_socket, unsigned char parm_id, cons
 	delete[] p_send_data;
 }
 
-// '전송' 버튼 이벤트
+
+// '전송' 버튼 클릭 이벤트
 void CClientDlg::OnBnClickedSendBtn()
 {
-	CString str;
-	GetDlgItemText(IDC_EDIT1, str); // Edit Control의 값을 str로 가져옴 (채팅 메시지)
+	if(mh_socket == INVALID_SOCKET)
+	{
+		AddEventString(L"서버에 접속된 상태가 아닙니다.");
+	}
+	else
+	{
+		CString str;
+		GetDlgItemText(IDC_EDIT1, str); // Edit Control의 값을 str로 가져옴 (채팅 메시지)
+
+		SendFrameData(mh_socket, 1, (const wchar_t*)str, (str.GetLength() + 1) * 2); // 데이터 전송(send)
+		// (const wchar_t*)str : CString -> void * (CString -> 유니코드 형식)
+		// str.GetLength(): str의 문자열 길이 +1(null문자) , 유니코드는 1문자당 2byte -> 곱하기 2를 해준다
+	}
 	
-	// 데이터 전송(send)
-	SendFrameData(mh_socket, 1, (const wchar_t*)str, (str.GetLength() + 1) * 2); // (const wchar_t*)str : CString -> void *
-	// str.GetLength(): str의 문자열 길이 +1(null문자) , 유니코드는 1문자당 2byte -> 곱하기 2를 해준다
+	SetDlgItemText(IDC_EDIT1, L"");
+	//GotoDlgCtrl(GetDlgItem(IDC_EDIT1)); // 포커스 설정
+}
 
-
+// '확인' 버튼 클릭 이벤트
+void CClientDlg::OnBnClickedOk()
+{
+	// Enter 치면 자동으로 OnBnClickedOk() 실행 -> Enter 치면 메시지 전송 하게 하기
+	//CDialogEx::OnOK();
+	OnBnClickedSendBtn(); // 메시지 전송
+	SetDlgItemText(IDC_EDIT1, L"");
+	//GotoDlgCtrl(GetDlgItem(IDC_EDIT1)); // GotoDlgCtrl : 내가 원하는 다이얼로그의 컨트롤로 이동 (+블록 설정), GetDlgItem : 해당 컨트롤의 윈도우 포인터를 구한다
 }

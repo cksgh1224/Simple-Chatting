@@ -23,6 +23,7 @@ public:
 	void AcceptProcess(SOCKET parm_h_socket); // 클라이언트 접속 시도 처리
 	void ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag); // 클라이언트의 접속 해제
 	void ReceiveData(SOCKET parm_h_socket, char* p_body_data, unsigned short body_size); // body 데이터 읽기
+	void SendFrameData(SOCKET parm_h_socket, unsigned char parm_id, const void* parm_p_data, int parm_size); // 데이터 전송 (send)
 
 	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가
 

@@ -253,7 +253,24 @@ LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 					
 					if (network_message_id == 1) // 실제로 클라이언트가 보내준 데이터(p_body_data)를 처리 (message_id 가 1이면 채팅 메시지)
 					{
-						AddEventString((wchar_t*)p_body_data); // p_body_data(char*)를 유니코드로(wchar_t) 형변환
+						CString str;
+						for (int i = 0; i < m_client_count; i++)
+						{
+							if (h_socket == mh_client_list[i]) // 내가 관리하는 클라이언트들 중에서 어떤 소켓이 메시지를 보냈는가
+							{
+								str = m_client_ip[i];
+								str.Format(L"%s : %s", m_client_ip[i], p_body_data); // Format(): CString 문자열을 C스타일 처럼 형식화하여 사용
+								break;
+							}
+						}
+						AddEventString(str);
+
+						// 서버에 접속된 모든 클라이언트에게 데이터 전송
+						for (int i = 0; i < m_client_count; i++)
+						{
+							SendFrameData(mh_client_list[i], 1, (const wchar_t*)str, (str.GetLength() + 1) * 2);
+						}
+
 					}
 
 					delete[] p_body_data;
@@ -276,4 +293,21 @@ LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 	}
 
 	return CDialogEx::WindowProc(message, wParam, lParam);
+}
+
+
+// 데이터 전송 (send)
+void CServerDlg::SendFrameData(SOCKET parm_h_socket, unsigned char parm_id, const void* parm_p_data, int parm_size)
+{
+	char* p_send_data = new char[parm_size + 4];
+
+	*p_send_data = 27;
+	*(unsigned short*)(p_send_data + 1) = parm_size; 
+	*(p_send_data + 3) = parm_id; 
+
+	memcpy(p_send_data + 4, parm_p_data, parm_size);
+
+	send(parm_h_socket, p_send_data, parm_size + 4, 0);
+
+	delete[] p_send_data;
 }
