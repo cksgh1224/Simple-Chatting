@@ -235,14 +235,26 @@ LRESULT CClientDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 
 // 데이터 전송 (send)
-void CClientDlg::SendFrameData(SOCKET parm_h_socket, const void* parm_p_data, int parm_size)
+void CClientDlg::SendFrameData(SOCKET parm_h_socket, unsigned char parm_id, const void* parm_p_data, int parm_size)
 {
 	// 데이터 전송(send)도 데이터 수신(recv)처럼 헤더, 바디로 구분해서 보낸다
 	// const void* parm_p_data: 채팅 데이터, 파일, 구조체.. 여러가지 데이터를 보낼 수 있기 떄문에 void* 사용, 데이터 전송만 하기 때문에 값을 바꿀 필요x -> const
 
-	// 32분 20초
-	// https://blog.naver.com/tipsware/220142420870
+	// 전송할 데이터 메모리 공간 (헤더 + 바디)
+	char* p_send_data = new char[parm_size + 4]; // 바디 + 헤더(4byte)
 
+	// 헤더 데이터
+	*p_send_data = 27; // 헤더의 첫번째 1byte -> key: 프로토콜이 정상적인 프로토콜인지 체크하는 변수 -> 임의의 값 27로 설정
+	*(unsigned short*)(p_send_data + 1) = parm_size; // body_size는 2byte이므로 형변환을 해줘야함 (형변환 안하면 1byte만 들어감) (unsigned short *) -> 2byte 만큼 값을 넣겠다
+	*(p_send_data + 3) = parm_id; // parm_id (message_id): 어떤 종류의 데이터인지 (ex. 채팅 데이터의 message_id는 1이다)
+
+	// body 데이터
+	memcpy(p_send_data + 4, parm_p_data, parm_size); // p_send_data + 4 에다가 parm_p_data 데이터를 parm_size 만큼 복사하겠다 (memcpy: 메모리 통째로 복사)
+	
+	// send() : 전송
+	send(parm_h_socket, p_send_data, parm_size + 4, 0); // (parm_h_socket) 소켓으로 부터 (parm_p_data) 데이터를 (parm_size+4) 크기만큼 보내겠다(바디 + 헤더)
+
+	delete[] p_send_data;
 }
 
 // '전송' 버튼 이벤트
@@ -250,7 +262,10 @@ void CClientDlg::OnBnClickedSendBtn()
 {
 	CString str;
 	GetDlgItemText(IDC_EDIT1, str); // Edit Control의 값을 str로 가져옴 (채팅 메시지)
-
+	
+	// 데이터 전송(send)
+	SendFrameData(mh_socket, 1, (const wchar_t*)str, (str.GetLength() + 1) * 2); // (const wchar_t*)str : CString -> void *
+	// str.GetLength(): str의 문자열 길이 +1(null문자) , 유니코드는 1문자당 2byte -> 곱하기 2를 해준다
 
 
 }

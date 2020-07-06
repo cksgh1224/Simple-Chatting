@@ -138,7 +138,7 @@ void CServerDlg::AcceptProcess(SOCKET parm_h_socket)
 		wcscpy(m_client_ip[m_client_count], ip_address); // 접속한 사용자의 ip를 배열에 보관 (wcscpy: strcpy의 유니코드 버전)
 		m_client_count++;
 
-		// MessageBox(ip_address, L"새로운 클라이언트가 접속했습니다", MB_OK); // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다
+		// MessageBox(ip_address, L"새로운 클라이언트가 접속했습니다", MB_OK); // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다 (1문자당 2byte)
 		AddEventString(L"새로운 클라이언트가 접속했습니다 : " + ip_address);
 	}
 	else // 접속 인원 초과
@@ -251,9 +251,9 @@ LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 					ReceiveData(h_socket, p_body_data, body_size); // body 데이터 읽기
 					
-					if (network_message_id == 1)
+					if (network_message_id == 1) // 실제로 클라이언트가 보내준 데이터(p_body_data)를 처리 (message_id 가 1이면 채팅 메시지)
 					{
-						// 실제로 클라이언트가 보내준 데이터(p_body_data)를 처리 
+						AddEventString((wchar_t*)p_body_data); // p_body_data(char*)를 유니코드로(wchar_t) 형변환
 					}
 
 					delete[] p_body_data;

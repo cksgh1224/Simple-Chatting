@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 // CClientDlg 대화 상자
 class CClientDlg : public CDialogEx
 {
@@ -22,7 +21,7 @@ public:
 	void ReadFrameData(); // 데이터 읽기 (헤더 + 바디)
 	void ReceiveData(char* p_body_data, unsigned short body_size); // body 데이터 읽기
 
-	void SendFrameData(SOCKET parm_h_socket, const void* parm_p_data, int parm_size); // 데이터 전송 (send)
+	void SendFrameData(SOCKET parm_h_socket, unsigned char parm_id, const void* parm_p_data, int parm_size); // 데이터 전송 (send)
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
