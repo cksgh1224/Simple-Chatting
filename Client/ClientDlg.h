@@ -15,6 +15,7 @@ public:
 	CClientDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
 
 	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가
+
 	void ConnectProcess(LPARAM lParam); // 서버 접속 처리 함수
 	void DestroySocket(); // 소켓 해제 (즉시 종료)
 

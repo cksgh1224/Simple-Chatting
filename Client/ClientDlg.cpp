@@ -118,7 +118,7 @@ HCURSOR CClientDlg::OnQueryDragIcon()
 void CClientDlg::ConnectProcess(LPARAM lParam)
 {
 	if (WSAGETSELECTERROR(lParam) == 0) // 에러가 없다 (서버 접속 성공)
-	{
+	{	
 		// 서버에 접속 성공 -> 비동기를 새로 건다 (FD_READ: 서버에서 데이터를 보냄, FD_CLOSE: 서버가 연결을 끊음)
 		WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_READ | FD_CLOSE);
 		AddEventString(L"서버에 접속했습니다!");
@@ -145,6 +145,8 @@ void CClientDlg::DestroySocket()
 // 데이터 읽기 (헤더 + 바디)
 void CClientDlg::ReadFrameData()
 {
+	WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_CLOSE); // 데이터 끊어읽기를 할 때(FD_READ) 27002메시지가 발생하지 않도록 비동기를 다시 걸음
+
 	char key, message_id;
 	recv(mh_socket, &key, 1, 0);
 	if (key == 27)
@@ -158,17 +160,17 @@ void CClientDlg::ReadFrameData()
 		{
 			char* p_body_data = new char[body_size];
 
-			ReceiveData(p_body_data, body_size); 
+			ReceiveData(p_body_data, body_size); // body 데이터 읽기
 
-			if (message_id == 1)
+			if (message_id == 1) // 서버에서 보낸 데이터 처리
 			{
-				// 서버에서 보낸 데이터 처리
 				AddEventString((wchar_t*)p_body_data);
 			}
 
 			delete[] p_body_data;
 		}
 
+		WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_READ | FD_CLOSE); // 데이터를 다 읽은 후 비동기를 다시 건다
 	}
 	else // 신뢰할 수 없는 프로토콜 (잘못된 데이터) 
 	{
@@ -216,14 +218,7 @@ LRESULT CClientDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		if (WSAGETSELECTEVENT(lParam) == FD_READ) // FD_READ
 		{
-			WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_CLOSE); // 데이터 끊어읽기를 할 때(FD_READ) 27002메시지가 발생하지 않도록 비동기를 다시 걸음
-			
 			ReadFrameData();
-
-			if (mh_socket != INVALID_SOCKET) // key == 27
-			{
-				WSAAsyncSelect(mh_socket, m_hWnd, 27002, FD_READ | FD_CLOSE); // 데이터를 다 읽은 후 비동기를 다시 건다
-			}
 		}
 		else // FD_CLOSE
 		{

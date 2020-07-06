@@ -4,7 +4,7 @@
 
 #pragma once
 
-#define MAX_CLIENT_COUNT 5 // 서버에 접속 가능한 클라이언트 수
+#define MAX_CLIENT_COUNT 2 // 서버에 접속 가능한 클라이언트 수
 
 // CServerDlg 대화 상자
 class CServerDlg : public CDialogEx
@@ -19,13 +19,17 @@ private:
 // 생성입니다.
 public:
 	CServerDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+	
+	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가
 
 	void AcceptProcess(SOCKET parm_h_socket); // 클라이언트 접속 시도 처리
-	void ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag); // 클라이언트의 접속 해제
+	void ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag); // 클라이언트 접속 해제
+
+	void ReadFrameData(const SOCKET& h_socket); // 데이터 읽기 (헤더 + 바디)
 	void ReceiveData(SOCKET parm_h_socket, char* p_body_data, unsigned short body_size); // body 데이터 읽기
+
 	void SendFrameData(SOCKET parm_h_socket, unsigned char parm_id, const void* parm_p_data, int parm_size); // 데이터 전송 (send)
 
-	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
