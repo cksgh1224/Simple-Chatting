@@ -116,7 +116,7 @@ HCURSOR CClientDlg::OnQueryDragIcon()
 
 // 서버 접속 처리 함수
 void CClientDlg::ConnectProcess(LPARAM lParam)
-{
+{	
 	if (WSAGETSELECTERROR(lParam) == 0) // 에러가 없다 (서버 접속 성공)
 	{	
 		// 서버에 접속 성공 -> 비동기를 새로 건다 (FD_READ: 서버에서 데이터를 보냄, FD_CLOSE: 서버가 연결을 끊음)
@@ -282,6 +282,6 @@ void CClientDlg::OnBnClickedOk()
 	// Enter 치면 자동으로 OnBnClickedOk() 실행 -> Enter 치면 메시지 전송 하게 하기
 	//CDialogEx::OnOK();
 	OnBnClickedSendBtn(); // 메시지 전송
-	SetDlgItemText(IDC_EDIT1, L"");
+	//SetDlgItemText(IDC_EDIT1, L"");
 	//GotoDlgCtrl(GetDlgItem(IDC_EDIT1)); // GotoDlgCtrl : 내가 원하는 다이얼로그의 컨트롤로 이동 (+블록 설정), GetDlgItem : 해당 컨트롤의 윈도우 포인터를 구한다
 }

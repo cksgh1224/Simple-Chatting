@@ -120,6 +120,8 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 // 클라이언트 접속 시도 처리 (FD_ACCEPT)
 void CServerDlg::AcceptProcess(SOCKET parm_h_socket)
 {
+	AddEventString(L"AcceptProcess()");
+	
 	// parm_h_socket : mh_listen_socket 핸들값과 동일 (메시지를 발생시킨 소켓)
 
 	if (MAX_CLIENT_COUNT > m_client_count)
@@ -131,24 +133,34 @@ void CServerDlg::AcceptProcess(SOCKET parm_h_socket)
 		mh_client_list[m_client_count] = accept(parm_h_socket, (LPSOCKADDR)&client_addr, &sockaddr_in_size); // mh_client_list[] : 실제 통신할 소켓
 
 		WSAAsyncSelect(mh_client_list[m_client_count], m_hWnd, 27002, FD_READ | FD_CLOSE); // 서버 접속 이후 recv, close에 대해 비동기를 건다
-
+		
 		// 접속한 클라이언트의 ip
 		CString ip_address; // CString은 MFC에서 문자열을 처리를 아주 쉽게 처리할 수 있도록 제공해주는 클래스
 		ip_address = inet_ntoa(client_addr.sin_addr);
 		wcscpy(m_client_ip[m_client_count], ip_address); // 접속한 사용자의 ip를 배열에 보관 (wcscpy: strcpy의 유니코드 버전)
 		m_client_count++;
 
-		AddEventString(L"새로운 클라이언트가 접속했습니다 : " + ip_address); // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다 (1문자당 2byte)
+		CString str; // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다 (1문자당 2byte)
+		str.Format(L"새로운 클라이언트가 접속했습니다 : %s (현재 접속 인원 : %d)", ip_address, m_client_count); 
+		AddEventString(str);
+		
+		if (m_client_count == MAX_CLIENT_COUNT)
+		{
+			AddEventString(L"(최대 접속 상태)");
+		}
 	}
 	else // 접속 인원 초과
 	{
 		AddEventString(L"새로운 클라이언트의 접속을 차단합니다 (서버 접속 인원 초과)"); //MessageBox(L"접속인원 초과!", MB_OK);
+		
 	}
 }
 
 // 클라이언트의 접속 해제 (FD_CLOSE)
 void CServerDlg::ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag)
 {
+	AddEventString(L"ClientCloseProcess()");
+	
 	// closesocket() 의 예외사항 -> 해당 소켓으로 데이터를 보내거나 받고 있으면 처리가 끝날때까지 기다린다
 
 	if (parm_force_flag == 1) // parm_force_flag 값이 1이면 데이터가 송수신되는 것과 상관없이 소켓을 바로 닫겠다
@@ -157,21 +169,22 @@ void CServerDlg::ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag)
 		setsockopt(parm_h_socket, SOL_SOCKET, SO_LINGER, (char*)&temp_linger, sizeof(temp_linger)); // param_h_socket소켓의 LINGER 옵션을 내가 설정한 LINGER 옵션으로 바꾼다		
 	}
 	
-	closesocket(parm_h_socket);
-	parm_h_socket = INVALID_SOCKET;
-
 	for (int i = 0; i < m_client_count; i++)
 	{
 		if (parm_h_socket == mh_client_list[i]) 
 		{
+			//AddEventString(L"parm_h_socket == mh_client_list[i]");
 			m_client_count--;
 			if (i != m_client_count) // 배열의 마지막 소켓이 아니면
 			{
 				mh_client_list[i] = mh_client_list[m_client_count]; // mh_client_list 배열에서 해제할 소켓 위치에 배열의 마지막 소켓을 넣는다
 				wcscpy(m_client_ip[i], m_client_ip[m_client_count]);
 			}
-		}
+		}	
 	}
+
+	closesocket(parm_h_socket);
+	parm_h_socket = INVALID_SOCKET;
 }
 
 
@@ -290,6 +303,10 @@ LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			ClientCloseProcess(h_socket, 0); // 클라이언트 접속 해제
 			AddEventString(L"클라이언트가 접속을 해제했습니다.");
+
+			CString str;
+			str.Format(L"(현재 접속 인원 : %d)", m_client_count);
+			AddEventString(str);
 		}
 
 	}
