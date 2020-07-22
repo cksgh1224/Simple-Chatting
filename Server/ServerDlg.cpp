@@ -20,7 +20,7 @@
 // 클라이언트가 connect 함수를 호출하여 서버에 접속을 시도하면 서버에서 accept를 이용해 클라이언트의 접속을 받아준다
 // accept 이후 클라이언트에게 하고싶은 행위가 있으면 이 함수에서 처리
 // 매개변수로 넘어오는 UserData* ap_user는 현재 접속한 사용자(클라이언트)의 정보를 담고있다
-void MyServer::AddWorkForAccept(UserData* ap_user)
+void MyServer::AddWorkForAccept(TW_UserData* ap_user)
 {
 	CString str;
 	str.Format(L"%s에서 새로운 사용자가 접속했습니다!", ap_user->GetIP());
@@ -38,7 +38,7 @@ void MyServer::ShowLimitError(const wchar_t* ap_ip_address)
 // 클라이언트 접속 해제시에 추가적으로 해야할 작업 처리
 // 매개변수로 넘어오는 UserData* ap_user는 접속을 해제하는 사용자(클라이언트)의 정보를 담고있다
 // a_error_code : 0이면 정상종료, -1이면 키값이 유효하지 않아서 종료, -2이면 바디정보 수신중에 오류 발생
-void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
+void MyServer::AddWorkForCloseUser(TW_UserData* ap_user, int a_error_code)
 {
 	CString str;
 	str.Format(L"%s에서 새로운 사용자가 접속을 해제했습니다!", ap_user->GetIP());
@@ -51,7 +51,7 @@ void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 // ap_recv_data: 클라이언트가 보낸 데엍, a_body_size: 클라이언트가 보낸 데이터의 body size (헤더를 뺀 바디 크기)
 int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
 {
-	UserData* p_user = ServerSocket::FindUserData(ah_socket); // 데이터를 보낸 클라이언트가 어떤 것인지 찾는다
+	TW_UserData* p_user = TW_ServerSocket::FindUserData(ah_socket); // 데이터를 보낸 클라이언트가 어떤 것인지 찾는다
 	
 	if (a_msg_id == NM_CHAT_DATA) // 클라이언트가 보낸 데이터가 채팅 데이터 이면
 	{
@@ -65,7 +65,7 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 			// 현재 사용자가 접속 상태인지 확인한다
 			if (mp_user_list[i]->GetHandle() != -1)
 			{
-				Socket::SendFrameData(mp_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
+				TW_Socket::SendFrameData(mp_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
 				// (str.GetLength() + 1) * 2 -> \0 때문에 +1을 해주고 유니코드는 문자 하나가 2byte이므로 x2를 해준다
 			}
 		}
@@ -88,8 +88,6 @@ CServerDlg::CServerDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_SERVER_DIALOG, pParent), m_server(this)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-
-	//m_client_count = 0;
 }
 
 void CServerDlg::DoDataExchange(CDataExchange* pDX)
@@ -101,6 +99,8 @@ void CServerDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_MESSAGE(25001, &CServerDlg::OnAcceptUser)
+	ON_MESSAGE(25002, &CServerDlg::OnReadAndClose)
 END_MESSAGE_MAP()
 
 
@@ -130,27 +130,10 @@ BOOL CServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 
-	//// socket() : 소켓 생성 (AF_INET: 주소체계, SOCK_STREAM: TCP)
-	//mh_listen_socket = socket(AF_INET, SOCK_STREAM, 0); // 클라이언트의 접속을 받아주는 소켓
+	// 서버 서비스 시작 (socket - bind - listen)
+	m_server.StartServer(L"192.168.77.100", 27100, m_hWnd);
+	AddEventString(L"서버 서비스를 시작합니다!");
 
-	//// 소켓의 네트워크 설정 (주소 체계, IP, 포트번호)
-	//struct sockaddr_in srv_addr;
-	//srv_addr.sin_family = AF_INET; // 주소 체계
-	//srv_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // 소켓이 연결할 네트워크 카드 설정(IP)
-	//srv_addr.sin_port = htons(20001); // 포트번호 설정 (이 프로그램에서 사용할 고유의 포트번호로 20001 설정) 
-
-	//// bind() : 서버 소켓 바인딩 (네트워크 카드에 소켓 연결)
-	//// mh_listen_socket을 "127.0.0.1" IP를 가진 네트워크 카드에 연결, (주소체계는 AF_INET, 포트번호는 20001)
-	//bind(mh_listen_socket, (LPSOCKADDR)&srv_addr, sizeof(srv_addr)); // LPSOCKADDR == SOCKADDR *
-	//
-	//// listen() : 클라이언트의 연결 요청 대기 
-	//listen(mh_listen_socket, 1); // 1: 대기자수 (여러 클라이언트가 동시에 접속하더라도 한번에 1개만 처리)
-	//AddEventString(L"클라이언트의 접속을 허락합니다...");
-
-	//// accept : 클라이언트 연결 수립 (실제 클라이언트의 접속) -> 클라이언트가 접속할 때 까지 이 함수에서 못 빠져나온다 -> 비동기 처리를 해줘야함
-	//// WSAAsyncSelect : 특정 소켓에 비동기 설정
-	//WSAAsyncSelect(mh_listen_socket, m_hWnd, 27001, FD_ACCEPT); // 이 소켓(mh_listen_socket)에 클라이언트가 접속하려고 한다면(FD_ACCEPT) 이 윈도우(m_hWnd)에게 27001 메시지를 준다 => WindowProc에서 처리 (m_hWnd : 대화상자의 윈도우 핸들)
-	
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 
@@ -192,217 +175,19 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 
 
 
-// 클라이언트 접속 시도 처리 (FD_ACCEPT)
-//void CServerDlg::AcceptProcess(SOCKET parm_h_socket)
-//{
-//	AddEventString(L"AcceptProcess()");
-//	
-//	// parm_h_socket : mh_listen_socket 핸들값과 동일 (메시지를 발생시킨 소켓)
-//
-//	if (MAX_CLIENT_COUNT > m_client_count)
-//	{	
-//		// accept() : 클라이언트 연결 수립
-//		// listen_socket의 복제를 만들어서 반환 -> 클라이언트와 실제 통신  (listen_socket은 클라이언트의 접속만 받음)
-//		struct sockaddr_in client_addr;
-//		int sockaddr_in_size = sizeof(client_addr);
-//		mh_client_list[m_client_count] = accept(parm_h_socket, (LPSOCKADDR)&client_addr, &sockaddr_in_size); // mh_client_list[] : 실제 통신할 소켓
-//
-//		WSAAsyncSelect(mh_client_list[m_client_count], m_hWnd, 27002, FD_READ | FD_CLOSE); // 서버 접속 이후 recv, close에 대해 비동기를 건다
-//		
-//		// 접속한 클라이언트의 ip
-//		CString ip_address; // CString은 MFC에서 문자열을 처리를 아주 쉽게 처리할 수 있도록 제공해주는 클래스
-//		ip_address = inet_ntoa(client_addr.sin_addr);
-//		wcscpy(m_client_ip[m_client_count], ip_address); // 접속한 사용자의 ip를 배열에 보관 (wcscpy: strcpy의 유니코드 버전)
-//		m_client_count++;
-//
-//		CString str; // 유니코드 문자집합 -> 문자열 앞에 L 을 붙여준다 (1문자당 2byte)
-//		str.Format(L"새로운 클라이언트가 접속했습니다 : %s (현재 접속 인원 : %d)", ip_address, m_client_count); 
-//		AddEventString(str);
-//		
-//		if (m_client_count == MAX_CLIENT_COUNT)
-//		{
-//			AddEventString(L"(최대 접속 상태)");
-//		}
-//	}
-//	else // 접속 인원 초과
-//	{
-//		AddEventString(L"새로운 클라이언트의 접속을 차단합니다 (서버 접속 인원 초과)"); //MessageBox(L"접속인원 초과!", MB_OK);
-//		
-//	}
-//}
+afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
+{
+	// 새로운 클라이언트가 접속했을 때 발생하는 메시지를 처리한다
+	m_server.ProcessToAccept(wParam, lParam);
 
-// 클라이언트의 접속 해제 (FD_CLOSE)
-//void CServerDlg::ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag)
-//{
-//	AddEventString(L"ClientCloseProcess()");
-//	
-//	// closesocket() 의 예외사항 -> 해당 소켓으로 데이터를 보내거나 받고 있으면 처리가 끝날때까지 기다린다
-//
-//	if (parm_force_flag == 1) // parm_force_flag 값이 1이면 데이터가 송수신되는 것과 상관없이 소켓을 바로 닫겠다
-//	{
-//		LINGER temp_linger = { TRUE, 0 }; // 데이터가 송수신되는 것과 상관없이 소켓을 바로 닫겠다 (TRUE, 0)
-//		setsockopt(parm_h_socket, SOL_SOCKET, SO_LINGER, (char*)&temp_linger, sizeof(temp_linger)); // param_h_socket소켓의 LINGER 옵션을 내가 설정한 LINGER 옵션으로 바꾼다		
-//	}
-//	
-//	for (int i = 0; i < m_client_count; i++)
-//	{
-//		if (parm_h_socket == mh_client_list[i]) 
-//		{
-//			//AddEventString(L"parm_h_socket == mh_client_list[i]");
-//			m_client_count--;
-//			if (i != m_client_count) // 배열의 마지막 소켓이 아니면
-//			{
-//				mh_client_list[i] = mh_client_list[m_client_count]; // mh_client_list 배열에서 해제할 소켓 위치에 배열의 마지막 소켓을 넣는다
-//				wcscpy(m_client_ip[i], m_client_ip[m_client_count]);
-//			}
-//		}	
-//	}
-//
-//	closesocket(parm_h_socket);
-//	parm_h_socket = INVALID_SOCKET;
-//}
+	return 0;
+}
 
 
-// 데이터 읽기 (헤더 + 바디)
-//void CServerDlg::ReadFrameData(const SOCKET& h_socket)
-//{
-//	// FD_READ 발생하는 경우
-//	// 1. 수신 버퍼가 비어있을 때 새로운 데이터가 들어오면
-//	// 2. WSAAsyncSelect로 FD_READ 비동기를 걸 때 수신 버퍼에 데이터가 있으면
-//	// 3. recv() 함수를 사용해서 수신 버퍼에세 데이터를 가져온 이후에도 수신 버퍼에 데이터가 있으면 
-//
-//	// 수신, 송신 측에서 데이터를 주고 받을 때 -> 헤더를 만들어서(주고받는 데이터에 대한 정보) 송수신
-//	// 4byte 크기의 헤더 -> 1byte: 이 프로토콜이 정상적인 프로토콜인지, 2byte: 바디(실제 데이터)크기가 얼마인지, 1byte: 이 데이터가 어떤 종류의 데이터인지
-//	// 헤더 -> 4byte를 한번의 읽지 않고 끊어서 읽는다. 1byte, 2byte, 1byte
-//	// 끊어 읽기를 하면 (FD_READ가 발생하는 3번 이유 떄문에) FD_READ가 계속 발생한다
-//	// => 헤더, 바디를 끊어 읽기할 때는 FD_READ가 발생하지 않게 해주자 -> 비동기 다시 걸기
-//
-//	WSAAsyncSelect(h_socket, m_hWnd, 27002, FD_CLOSE); // FD_CLOSE에 의해서만 발생하도록 설정 (FD_READ에 의해 발생하지 않도록, recv함수를 몇번을 쓰던 27002 발생하지 않음)
-//
-//	char key, network_message_id; // key: 이 프로토콜이 정상적인 프로토콜인지 체크 (1byte), network_message_id: 이 데이터가 어떤 종류의 데이터인지 
-//	recv(h_socket, &key, sizeof(key), 0); // h_socket으로부터 1바이트의 데이터를 key에다가 가져옴
-//	if (key == 27) // key값이 27이면 내가 원하는 클라이언트에서 전송한 데이터 (27 내가 설정한 임의의 값)
-//	{
-//		unsigned short body_size; // 바디(실제 데이터)크기를 담을 변수 (2byte)
-//		recv(h_socket, (char*)&body_size, sizeof(body_size), 0); // body_size를 가져옴
-//		recv(h_socket, &network_message_id, 1, 0); // network_message_id를 가져옴
-//		// ↑↑↑ 헤더를 다 읽어들임 
-//
-//		// body 읽어들이기 
-//		if (body_size > 0) // body(데이터)가 없을 수도 있기 때문에 체크
-//		{
-//			char* p_body_data = new char[body_size]; // body_size만큼 메모리 동적 할당
-//
-//			ReceiveData(h_socket, p_body_data, body_size); // body 데이터 읽기
-//
-//			if (network_message_id == 1) // 실제로 클라이언트가 보내준 데이터(p_body_data)를 처리 (message_id 가 1이면 채팅 메시지)
-//			{
-//				CString str;
-//				for (int i = 0; i < m_client_count; i++)
-//				{
-//					if (h_socket == mh_client_list[i]) // 내가 관리하는 클라이언트들 중에서 어떤 소켓이 메시지를 보냈는가
-//					{
-//						str = m_client_ip[i];
-//						str.Format(L"%s : %s", m_client_ip[i], p_body_data); // Format(): CString 문자열을 C스타일 처럼 형식화하여 사용
-//						break;
-//					}
-//				}
-//				AddEventString(str);
-//
-//				// 서버에 접속된 모든 클라이언트에게 데이터 전송
-//				for (int i = 0; i < m_client_count; i++)
-//				{
-//					SendFrameData(mh_client_list[i], 1, (const wchar_t*)str, (str.GetLength() + 1) * 2);
-//				}
-//			}
-//
-//			delete[] p_body_data;
-//		}
-//
-//		WSAAsyncSelect(h_socket, m_hWnd, 27002, FD_READ | FD_CLOSE); // 데이터를 다 읽은 후 비동기 재설정
-//	}
-//	else // key != 27 : 내가 원하는 클라이언트에서 전송한 데이터가 아님 -> 소켓을 즉각 파괴시킨다
-//	{
-//		ClientCloseProcess(h_socket, 1);
-//	}
-//}
-
-// recv (body 데이터 읽기)
-//void CServerDlg::ReceiveData(SOCKET parm_h_socket, char* p_body_data, unsigned short body_size)
-//{
-//	int current_size, total_size = 0, retry_count = 0;
-//	// current_size: recv 함수의 반환값을 저장할 변수 (recv함수는 읽은 값 만큼 반환)
-//	// total_size: 총 읽은 데이터 (recv함수의 반환값을 모두 더해서 전체 데이터를 다 받았는지 확인할 변수 - total_size가 body_size와 같으면 다 읽은거)
-//	// retry_count: 재시도 값 (recv에서 에러 발생시)
-//
-//	// recv() 함수: 1000byte 데이터를 읽어라 -> 한번에 1000byte 다 읽지 못할 수도 있다 -> 400byte 읽고 반환, 600byte 읽고 반환) -> 반복문 이용
-//	while (total_size < body_size) // 데이터를 다 읽지 못했으면
-//	{
-//		current_size = recv(parm_h_socket, p_body_data + total_size, body_size - total_size, 0); // h_socket으로부터 (p_body_data + total_size) 메모리 위치에서 (body_size - total_size)만큼 데이터를 읽어서 저장해라
-//
-//		if (current_size == SOCKET_ERROR) // 수신중에 에러가 발생하면 SOCKET_ERROR라는 값을 반환한다
-//		{
-//			retry_count++;
-//			Sleep(50); // 에러 발생시 0.05초 쉬었다가 다시 시도
-//			if (retry_count > 5) // 에러가 한번 발생했다고 바로 끊어버리지 않고, 6번 재시도 하겠다
-//				break;
-//		}
-//		else
-//		{
-//			retry_count = 0;
-//			total_size += current_size;
-//		}
-//	}
-//}
-
-
-
-// WindowProc: 윈도우에 메시지가 들어왔을 때 호출되는 함수
-//LRESULT CServerDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
-//{
-//	// wParam: 메시지가 발생하게된 소켓의 핸들(mh_listen_socket)
-//	// lParam: 소켓에 에러가 있는지(WSAGETSELECTERROR) or 어떤 이벤트 때문에 발생했는지(WSAGETSELECTEVENT)
-//
-//	if (message == 27001) { // FD_ACCEPT (소켓에 클라이언트가 접속하려고 할 때 발생)
-//		AcceptProcess((SOCKET)wParam); // 클라이언트 접속 시도 처리
-//	}
-//	else if (message == 27002) // FD_READ, FD_CLOSE
-//	{	
-//		SOCKET h_socket = (SOCKET)wParam; // mh_listen_socket
-//
-//		if (WSAGETSELECTEVENT(lParam) == FD_READ) // FD_READ 발생 (클라이언트가 데이터를 보냈다)
-//		{
-//			ReadFrameData(h_socket); // 데이터 읽기
-//		}
-//		else // FD_CLOSE (클라이언트 접속 해제)
-//		{
-//			ClientCloseProcess(h_socket, 0); // 클라이언트 접속 해제
-//			AddEventString(L"클라이언트가 접속을 해제했습니다.");
-//
-//			CString str;
-//			str.Format(L"(현재 접속 인원 : %d)", m_client_count);
-//			AddEventString(str);
-//		}
-//
-//	}
-//
-//	return CDialogEx::WindowProc(message, wParam, lParam);
-//}
-
-
-
-// 데이터 전송 (send)
-//void CServerDlg::SendFrameData(SOCKET parm_h_socket, unsigned char parm_id, const void* parm_p_data, int parm_size)
-//{
-//	char* p_send_data = new char[parm_size + 4];
-//
-//	*p_send_data = 27;
-//	*(unsigned short*)(p_send_data + 1) = parm_size; 
-//	*(p_send_data + 3) = parm_id; 
-//
-//	memcpy(p_send_data + 4, parm_p_data, parm_size);
-//
-//	send(parm_h_socket, p_send_data, parm_size + 4, 0);
-//
-//	delete[] p_send_data;
-//}
+afx_msg LRESULT CServerDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
+{
+	// 접속한 클라이언트가 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다
+	m_server.ProcessClientEvent(wParam, lParam);
+	
+	return 0;
+}
