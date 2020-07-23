@@ -4,7 +4,7 @@
 
 #pragma once
 
-#define NM_CHAT_DATA      1   // 채팅 데이터의 message_id 는 1이다
+#define NM_CHAT_DATA      1   // 채팅 Message ID
 
 
 class CClientDlg;
@@ -12,10 +12,12 @@ class CClientDlg;
 class MyClient : public ClientSocket
 {
 private:
-	CClientDlg* mp_parent;
+	CClientDlg* mp_parent; // 대화상자 객체의 주소를 저장할 변수
 
 public:
-	MyClient(CClientDlg* ap_parent) : ClientSocket(0x27)
+	// CClientDlg 대화상자의 리스트 박스 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
+	// CClientDlg 생성자에 m_client(this) 추가
+	MyClient(CClientDlg* ap_parent) : ClientSocket(0x27) // 프로토콜 헤더의 시작 1바이트를 0x27로 설정 (구분값)
 	{
 		mp_parent = ap_parent;
 	}

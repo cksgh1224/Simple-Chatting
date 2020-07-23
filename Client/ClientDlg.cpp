@@ -17,8 +17,14 @@
 // 수신된 데이터를 처리하는 함수
 int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
 {
-	if (a_msg_id == NM_CHAT_DATA)
+	// 대용량 데이터가 전송 또는 수신될 때, 필요한 기본 코드를 수행
+	ClientSocket::ProcessRecvData(ah_socket, a_msg_id, ap_recv_data, a_body_size);
+	
+	
+	if (a_msg_id == NM_CHAT_DATA) // 수신된 데이터가 채팅 데이터인 경우
 	{
+		// 수신된 데이터에 대한 채팅 정보가 유니코드 형태의 문자열로 저장되어 있기 때문에 
+		// 유니코드 문자열 형태로 캐스팅하여 리스트 박스에 추가
 		mp_parent->AddEventString((wchar_t*)ap_recv_data);
 	}
 
@@ -30,7 +36,7 @@ int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 // CClientDlg 대화 상자
 
 CClientDlg::CClientDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_CLIENT_DIALOG, pParent), m_client(this)
+	: CDialogEx(IDD_CLIENT_DIALOG, pParent), m_client(this) // m_client(this): 객체를 생성할 때 대화상자의 주소를 넘겨준다
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -62,7 +68,7 @@ BOOL CClientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	
-	// 서버에 접속하기 (192.168.77.100 IP를 가진 컴퓨터에 27100 포트번호를 사용하는 서버에 접속)
+	// 서버에 접속하기 (IP 주소가 '192.168.77.100'을 사용하고 포트 번호가 27100인 서버에 접속을 시도한다)
 	m_client.ConnectToServer(L"192.168.77.100", 27100, m_hWnd);
 
 
@@ -125,12 +131,15 @@ void CClientDlg::AddEventString(const wchar_t* ap_string)
 void CClientDlg::OnBnClickedSendBtn()
 {
 	CString str;
-	GetDlgItemText(IDC_CHAT_EDIT, str); // IDC_CHAT_EDIT 에디트 박스에 적혀있는 문자열을 str에 넣는다
+	GetDlgItemText(IDC_CHAT_EDIT, str); // IDC_CHAT_EDIT 에디트 박스에 입력된 문자열을 str에 가져온다
 	SetDlgItemText(IDC_CHAT_EDIT, L"");
 
+	// 서버와 접속 상태인지 확인한다
 	if (m_client.IsConnected() == 1) // 서버에 접속중
 	{
-		m_client.SendFrameData(NM_CHAT_DATA, (char*)(const wchar_t*)str, (str.GetLength() + 1) * 2); // 서버에 데이터 전송
+		m_client.SendFrameData(NM_CHAT_DATA, (char*)(const wchar_t*)str, (str.GetLength() + 1) * 2); // 서버에 채팅 데이터 전송
+		// 문자열을 전송할 때는 NULL 문자를 포함해서 전송하기 때문에 문자열 길이에 1을 더하고 
+		// 유니코드에서 문자 1개는 2byte를 차지하기 때문에 문자열 길이에 2를 곱한다
 	}
 
 }
@@ -138,10 +147,11 @@ void CClientDlg::OnBnClickedSendBtn()
 
 
 
+// 서버 접속에 대한 결과를 알려주는 메시지를 처리한다 
 // FD_CONNECT : 26001 메시지
 afx_msg LRESULT CClientDlg::OnConnected(WPARAM wParam, LPARAM lParam)
 {
-	// 접속에 대한 결과를 알려주는 함수
+	// 서버 접속에 대한 결과
 	if (m_client.ResultOfConnection(lParam) == 1) // 접속 성공
 	{
 		AddEventString(L"서버에 접속했습니다!");
@@ -155,11 +165,10 @@ afx_msg LRESULT CClientDlg::OnConnected(WPARAM wParam, LPARAM lParam)
 }
 
 
+// 접속한 서버에서 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다
 // FD_READ, FD_CLOSE : 26002 메시지
 afx_msg LRESULT CClientDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 {
-	// 접속한 서버에서 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다
 	m_client.ProcessServerEvent(wParam, lParam);
-
 	return 0;
 }

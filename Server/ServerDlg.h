@@ -12,14 +12,14 @@ class CServerDlg; // 전방선언
 class MyServer : public ServerSocket
 {
 private:
-	CServerDlg* mp_parent; // CServerDlg 대화상자를 가리키는 포인터 (리스트 박스 작업을 할 때 사용)
+	CServerDlg* mp_parent; // 대화상자 객체의 주소를 저장할 변수 (리스트 박스 작업을 할 때 사용)
 
 public:
 	// CServerDlg 대화상자의 m_event_list(리스트 박스) 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
 	// CServerDlg 생성자에 m_server(this) 추가
 	MyServer(CServerDlg* ap_parent) : ServerSocket(0x27, MAX_CLIENT_COUNT, new UserData)
 	{
-		// 0x27: 구분값(16진수), 최대 사용자 수, 사용자를 관리하기 위한 클래스(UserData / UserAccount - 로그인)
+		// 프로토콜 헤더의 시작 바이트를(구분값) 0x27로 하고 최대 사용자 수를 50명으로 정한다, 사용자 관리용 클래스는 UserData를 사용한다
 		mp_parent = ap_parent;
 	}
 	
