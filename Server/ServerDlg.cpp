@@ -20,7 +20,7 @@
 // 클라이언트가 connect 함수를 호출하여 서버에 접속을 시도하면 서버에서 accept를 이용해 클라이언트의 접속을 받아준다
 // accept 이후 클라이언트에게 하고싶은 행위가 있으면 이 함수에서 처리
 // 매개변수로 넘어오는 UserData* ap_user는 현재 접속한 사용자(클라이언트)의 정보를 담고있다
-void MyServer::AddWorkForAccept(TW_UserData* ap_user)
+void MyServer::AddWorkForAccept(UserData* ap_user)
 {
 	CString str;
 	str.Format(L"%s에서 새로운 사용자가 접속했습니다!", ap_user->GetIP());
@@ -38,7 +38,7 @@ void MyServer::ShowLimitError(const wchar_t* ap_ip_address)
 // 클라이언트 접속 해제시에 추가적으로 해야할 작업 처리
 // 매개변수로 넘어오는 UserData* ap_user는 접속을 해제하는 사용자(클라이언트)의 정보를 담고있다
 // a_error_code : 0이면 정상종료, -1이면 키값이 유효하지 않아서 종료, -2이면 바디정보 수신중에 오류 발생
-void MyServer::AddWorkForCloseUser(TW_UserData* ap_user, int a_error_code)
+void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 {
 	CString str;
 	str.Format(L"%s에서 새로운 사용자가 접속을 해제했습니다!", ap_user->GetIP());
@@ -51,7 +51,7 @@ void MyServer::AddWorkForCloseUser(TW_UserData* ap_user, int a_error_code)
 // ap_recv_data: 클라이언트가 보낸 데엍, a_body_size: 클라이언트가 보낸 데이터의 body size (헤더를 뺀 바디 크기)
 int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
 {
-	TW_UserData* p_user = TW_ServerSocket::FindUserData(ah_socket); // 데이터를 보낸 클라이언트가 어떤 것인지 찾는다
+	UserData* p_user = ServerSocket::FindUserData(ah_socket); // 데이터를 보낸 클라이언트가 어떤 것인지 찾는다
 	
 	if (a_msg_id == NM_CHAT_DATA) // 클라이언트가 보낸 데이터가 채팅 데이터 이면
 	{
@@ -65,7 +65,7 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 			// 현재 사용자가 접속 상태인지 확인한다
 			if (mp_user_list[i]->GetHandle() != -1)
 			{
-				TW_Socket::SendFrameData(mp_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
+				Socket::SendFrameData(mp_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
 				// (str.GetLength() + 1) * 2 -> \0 때문에 +1을 해주고 유니코드는 문자 하나가 2byte이므로 x2를 해준다
 			}
 		}

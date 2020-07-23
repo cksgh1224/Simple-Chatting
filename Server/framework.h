@@ -15,14 +15,14 @@
 #include <afxext.h>         // MFC 확장입니다.
 
 
-#include "TW_Socket.h"
+#include "SocketAPI.h"
 
 #pragma comment(lib, "WS2_32.lib")
 
 #ifdef _DEBUG
-	#pragma comment(lib, "D_TW_Socket.lib") // Debug
+	#pragma comment(lib, "D_SocketAPI.lib") // Debug
 #else
-	#pragma comment(lib, "R_TW_Socket.lib") // Release
+	#pragma comment(lib, "R_SocketAPI.lib") // Release
 #endif
 
 

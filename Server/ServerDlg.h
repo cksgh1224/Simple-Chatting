@@ -9,7 +9,7 @@
 
 class CServerDlg; // 전방선언
 
-class MyServer : public TW_ServerSocket
+class MyServer : public ServerSocket
 {
 private:
 	CServerDlg* mp_parent; // CServerDlg 대화상자를 가리키는 포인터 (리스트 박스 작업을 할 때 사용)
@@ -17,7 +17,7 @@ private:
 public:
 	// CServerDlg 대화상자의 m_event_list(리스트 박스) 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
 	// CServerDlg 생성자에 m_server(this) 추가
-	MyServer(CServerDlg* ap_parent) : TW_ServerSocket(0x27, MAX_CLIENT_COUNT, new TW_UserData)
+	MyServer(CServerDlg* ap_parent) : ServerSocket(0x27, MAX_CLIENT_COUNT, new UserData)
 	{
 		// 0x27: 구분값(16진수), 최대 사용자 수, 사용자를 관리하기 위한 클래스(UserData / UserAccount - 로그인)
 		mp_parent = ap_parent;
@@ -25,13 +25,13 @@ public:
 	
 
 	// Accept 시에 추가적으로 해야할 작업 처리
-	virtual void AddWorkForAccept(TW_UserData* ap_user);
+	virtual void AddWorkForAccept(UserData* ap_user);
 
 	// 최대 사용자수 초과시에 추가적으로 해야할 작업 처리 (미구현)
 	virtual void ShowLimitError(const wchar_t* ap_ip_address);
 
 	// 클라이언트 접속 해제시에 추가적으로 해야할 작업 처리
-	virtual void AddWorkForCloseUser(TW_UserData* ap_user, int a_error_code);
+	virtual void AddWorkForCloseUser(UserData* ap_user, int a_error_code);
 
 	// 수신된 데이터를 처리하는 함수
 	virtual int ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size);
