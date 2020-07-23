@@ -15,6 +15,8 @@
 #include <afxext.h>         // MFC 확장입니다.
 
 
+
+// 윈도우 소켓 관련 헤더파일, 라이브러리
 #include "SocketAPI.h"
 
 #pragma comment(lib, "WS2_32.lib")
@@ -24,6 +26,7 @@
 #else
 	#pragma comment(lib, "R_SocketAPI.lib") // Release
 #endif
+
 
 
 #ifndef _AFX_NO_OLE_SUPPORT

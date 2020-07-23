@@ -23,7 +23,7 @@
 void MyServer::AddWorkForAccept(UserData* ap_user)
 {
 	CString str;
-	str.Format(L"%s에서 새로운 사용자가 접속했습니다!", ap_user->GetIP());
+	str.Format(L"%s 에서 사용자가 접속했습니다!", ap_user->GetIP());
 	mp_parent->AddEventString(str);
 }
 
@@ -41,7 +41,7 @@ void MyServer::ShowLimitError(const wchar_t* ap_ip_address)
 void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 {
 	CString str;
-	str.Format(L"%s에서 새로운 사용자가 접속을 해제했습니다!", ap_user->GetIP());
+	str.Format(L"%s 에서 사용자가 접속을 해제했습니다!", ap_user->GetIP());
 	mp_parent->AddEventString(str);
 }
 
@@ -65,7 +65,7 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 			// 현재 사용자가 접속 상태인지 확인한다
 			if (mp_user_list[i]->GetHandle() != -1)
 			{
-				Socket::SendFrameData(mp_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
+				SendFrameData(mp_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
 				// (str.GetLength() + 1) * 2 -> \0 때문에 +1을 해주고 유니코드는 문자 하나가 2byte이므로 x2를 해준다
 			}
 		}
@@ -174,7 +174,7 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 }
 
 
-
+// FD_ACCEPT : 25001 메시지
 afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 {
 	// 새로운 클라이언트가 접속했을 때 발생하는 메시지를 처리한다
@@ -183,7 +183,7 @@ afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
+// FD_READ, FD_CLOSE : 25002 메시지
 afx_msg LRESULT CServerDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 {
 	// 접속한 클라이언트가 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다

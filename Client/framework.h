@@ -14,9 +14,19 @@
 #include <afxwin.h>         // MFC 핵심 및 표준 구성 요소입니다.
 #include <afxext.h>         // MFC 확장입니다.
 
+
+
 // 윈도우 소켓 관련 헤더파일, 라이브러리
-#include <WinSock2.h>
-#pragma comment(lib, "ws2_32.lib")
+#include "SocketAPI.h"
+
+#pragma comment(lib, "WS2_32.lib")
+
+#ifdef _DEBUG
+	#pragma comment(lib, "D_SocketAPI.lib") // Debug
+#else
+	#pragma comment(lib, "R_SocketAPI.lib") // Release
+#endif
+
 
 
 #ifndef _AFX_NO_OLE_SUPPORT

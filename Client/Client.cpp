@@ -39,14 +39,9 @@ BOOL CClientApp::InitInstance()
 {
 	CWinApp::InitInstance();
 
-	WSADATA temp; // 소켓 정보를 담을 구조체
-	WSAStartup(0x0202, &temp); // 소켓 작업 시작 (소켓버전, 소켓에 버전에 대한 정보를 담을 구초제)
-	
 	CClientDlg dlg;
 	m_pMainWnd = &dlg;
-	dlg.DoModal(); // 다이얼로그 실행
-
-	WSACleanup(); // 소켓 작업 끝
+	dlg.DoModal(); 
 
 	return FALSE;
 }

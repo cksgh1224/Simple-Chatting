@@ -5,7 +5,7 @@
 #pragma once
 
 #define MAX_CLIENT_COUNT 50   // 서버에 접속 가능한 클라이언트 수
-#define NM_CHAT_DATA      1   // 채팅 데이터의 message_id 는 1이다
+#define NM_CHAT_DATA      1   // 채팅 Message ID
 
 class CServerDlg; // 전방선언
 

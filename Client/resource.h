@@ -5,7 +5,9 @@
 #define IDD_CLIENT_DIALOG               102
 #define IDR_MAINFRAME                   128
 #define IDC_LIST1                       1000
+#define IDC_EVENT_LIST                  1000
 #define IDC_EDIT1                       1001
+#define IDC_CHAT_EDIT                   1001
 #define IDC_SEND_BTN                    1002
 
 // Next default values for new objects
