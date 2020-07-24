@@ -53,6 +53,7 @@ BEGIN_MESSAGE_MAP(CClientDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_SEND_BTN, &CClientDlg::OnBnClickedSendBtn)
 	ON_MESSAGE(26001, &CClientDlg::OnConnected)
 	ON_MESSAGE(26002, &CClientDlg::OnReadAndClose)
+	ON_BN_CLICKED(IDC_CONNECT_BTN, &CClientDlg::OnBnClickedConnectBtn)
 END_MESSAGE_MAP()
 
 
@@ -69,8 +70,8 @@ BOOL CClientDlg::OnInitDialog()
 
 	
 	// 서버에 접속하기 (IP 주소가 '192.168.77.100'을 사용하고 포트 번호가 27100인 서버에 접속을 시도한다)
-	m_client.ConnectToServer(L"192.168.77.100", 27100, m_hWnd);
-
+	//m_client.ConnectToServer(L"192.168.77.100", 27100, m_hWnd);
+	
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -169,6 +170,28 @@ afx_msg LRESULT CClientDlg::OnConnected(WPARAM wParam, LPARAM lParam)
 // FD_READ, FD_CLOSE : 26002 메시지
 afx_msg LRESULT CClientDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 {
-	m_client.ProcessServerEvent(wParam, lParam);
+	if (m_client.ProcessServerEvent(wParam, lParam) == 0) // ProcessServerEvent: FD_READ는 1, FD_CLOSE는 0 반환
+	{
+		AddEventString(L"서버와 연결이 해제되었습니다.");
+	}
+
 	return 0;
+}
+
+
+// '서버 접속' 버튼 클릭
+void CClientDlg::OnBnClickedConnectBtn()
+{
+	// 서버와 접속 상태인지 확인하여 서버와 접속중이라면 처리하지 않는다
+	if (!m_client.IsConnected()) // 서버에 접속중이 아니라면
+	{
+		CString str;
+		GetDlgItemText(IDC_IP_EDIT, str); // 사용자가 입력한 주소를 str에 가져온다
+		if (!str.IsEmpty())
+		{
+			AddEventString(L"서버에 접속을 시도합니다. : " + str);			
+			m_client.ConnectToServer(str, 27100, m_hWnd); // 사용자가 접속한 IP 주소에 포트 번호가 27100인 서버로 접속을 시도한다
+		}
+	}
+
 }

@@ -37,7 +37,6 @@ private:
 public:
 	CClientDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
 
-
 	// 리스트 박스 메시지 추가
 	void AddEventString(CString parm_string); 
 	void AddEventString(const wchar_t* ap_string); 
@@ -68,4 +67,6 @@ public:
 protected:
 	afx_msg LRESULT OnConnected(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnReadAndClose(WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg void OnBnClickedConnectBtn();
 };

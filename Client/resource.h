@@ -11,7 +11,7 @@
 #define IDC_SEND_BTN                    1002
 #define IDC_IP_EDIT                     1005
 #define IDC_CONNECT_BTN                 1006
-#define IDC_CHECK1                      1007
+#define IDC_UTF_CHECK                   1007
 
 // Next default values for new objects
 // 
