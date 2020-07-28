@@ -6,6 +6,7 @@
 #include "framework.h"
 #include "Client.h"
 #include "ClientDlg.h"
+#include "LoginDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -39,9 +40,9 @@ BOOL CClientApp::InitInstance()
 {
 	CWinApp::InitInstance();
 
-	CClientDlg dlg;
+	LoginDialog dlg;
 	m_pMainWnd = &dlg;
-	dlg.DoModal(); 
+	dlg.DoModal();
 
 	return FALSE;
 }
