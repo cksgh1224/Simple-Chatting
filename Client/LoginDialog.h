@@ -9,6 +9,17 @@
 #pragma comment(lib, "odbc32.lib")
 
 
+// 데이터를 가져오는 최대 단위
+#define MAX_COUNT 100
+
+// 테이블에 저장된 데이터 한 개를 저장할 구조체
+struct _UserData
+{
+	wchar_t id[20];
+	wchar_t pw[20];
+	wchar_t name[20];
+};
+
 
 // LoginDialog 대화 상자
 
@@ -27,6 +38,7 @@ public:
 	virtual ~LoginDialog();
 
 	int MySqlConnect(); // ODBC를 사용하여 MySql Server 와 연결
+	void SelectQuery(wchar_t* query);
 
 
 // 대화 상자 데이터입니다.
@@ -39,6 +51,9 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnBnClickedButton1();
+	afx_msg void OnBnClickedLoginBtn();
 	virtual BOOL OnInitDialog();
+	afx_msg void OnDestroy();
+	afx_msg void OnBnClickedSelectBtn();
+	afx_msg void OnBnClickedJoinBtn();
 };
