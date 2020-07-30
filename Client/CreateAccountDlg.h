@@ -5,10 +5,15 @@
 
 class CreateAccountDlg : public CDialogEx
 {
+private:
+	SQLHANDLE mh_environment;  // ODBC 기술을 사용하기 위한 환경 정보
+	SQLHDBC mh_odbc;           // ODBC 함수를 사용하기 위한 정보
+
 	DECLARE_DYNAMIC(CreateAccountDlg)
 
 public:
 	CreateAccountDlg(CWnd* pParent = nullptr);   // 표준 생성자입니다.
+	CreateAccountDlg(SQLHANDLE environment, SQLHDBC odbc, CWnd* pParent = nullptr); 
 	virtual ~CreateAccountDlg();
 
 // 대화 상자 데이터입니다.
@@ -21,5 +26,6 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnBnClickedAddBtn();
+	afx_msg void OnBnClickedAddBtn(); // 회원가입 버튼 이벤트
+	void InsertQuery(CString& query); // Insert 문 수행
 };

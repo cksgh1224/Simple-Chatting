@@ -1,12 +1,13 @@
 ﻿#pragma once
 
 
-// ODBC API를 사용하기 위한 헤더 파일 추가
-#include <odbcinst.h>
-#include <sqlext.h>
-
-// ODBC API를 사용하기 위한 라이브러리 추가
-#pragma comment(lib, "odbc32.lib")
+// pch.h 에 선언
+//// ODBC API를 사용하기 위한 헤더 파일 추가
+//#include <odbcinst.h>
+//#include <sqlext.h>
+//
+//// ODBC API를 사용하기 위한 라이브러리 추가
+//#pragma comment(lib, "odbc32.lib")
 
 
 // 데이터를 가져오는 최대 단위

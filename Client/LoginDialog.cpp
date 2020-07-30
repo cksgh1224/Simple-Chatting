@@ -56,10 +56,6 @@ BOOL LoginDialog::OnInitDialog()
 		OutputDebugString(L"MySql 서버 접속 실패\n");
 	}
 		
-
-
-
-
 	return TRUE;
 }
 
@@ -153,9 +149,7 @@ void LoginDialog::OnBnClickedLoginBtn()
 	unsigned short record_state; // 읽어온 데이터의 상태를 기록할 변수
 	unsigned long record_num = 0;           // 읽은 데이터의 개수를 저장할 변수
 	_UserData raw_data;          // 읽어온 데이터를 저장할 변수
-	CString str;                            // 읽은 데이터로 문자열 구성
 
-	wchar_t query[256] = L"select mid,mpw,mname from user where mid='cksgh1224' and mpw='1234'";
 	CString query_str;
 	query_str.Format(L"select mid,mpw,mname from user where mid='%s' and mpw='%s' ", id, pw);
 
@@ -195,49 +189,20 @@ void LoginDialog::OnBnClickedLoginBtn()
 
 
 		// SQL 명령문 실행
-		SQLExecDirect(h_statement, (SQLWCHAR*)query, SQL_NTS);
-		//SQLExecDirect(h_statement, (SQLWCHAR*)query_str, SQL_NTS);
-
-		if (SQLFetchScroll(h_statement, SQL_FETCH_NEXT, 0) != SQL_NO_DATA)
+		//RETCODE ret_code = SQLExecDirect(h_statement, (SQLWCHAR*)query, SQL_NTS);
+		RETCODE ret_code = SQLExecDirect(h_statement, (SQLWCHAR*)(const wchar_t*)query_str, SQL_NTS);
+		
+		if (ret_code = (SQLFetchScroll(h_statement, SQL_FETCH_NEXT, 0) != SQL_NO_DATA))
 		{
 			if (record_state != SQL_ROW_DELETED && record_state != SQL_ROW_ERROR)
 			{
-				str.Format(L"입력한 아이디:%s\n검색한 아이디:%s\n입력한 비밀번호:%s\n검색한 비밀번호:%s", id, raw_data.id, pw, raw_data.pw);
-				MessageBox(str, NULL, MB_OK);
-				
-				if (raw_data.id == id)
-				{
-					if (raw_data.pw == pw)
-					{
-						MessageBox(L"로그인 성공", NULL, MB_OK);
-					}
-					else
-					{
-						MessageBox(L"비밀번호가 틀렸습니다", NULL, MB_OK);
-					}
-				}
-				else
-				{
-					MessageBox(L"아이디가 틀렸습니다", NULL, MB_OK);
-				}
+				MessageBox(L"로그인 성공!", NULL, MB_OK);
 			}
 		}
-		//MessageBox(L"검색 성공", NULL, MB_OK);
-		//MessageBox(L"검색 실패", NULL, MB_OK);
-
-		//while (SQLFetchScroll(h_statement, SQL_FETCH_NEXT, 0) != SQL_NO_DATA)
-		//{
-		//	// 데이터 개수만큼 반복하면서 작업한다
-		//	for (int i = 0; i < record_num; i++)
-		//	{
-		//		// 가져온 데이터가 삭제된 정보나 에러가 아니라면 문자열 구성
-		//		if (record_state[i] != SQL_ROW_DELETED && record_state[i] != SQL_ROW_ERROR)
-		//		{
-		//			str.Format(L"ID: %s, PW: %s, NAME: %s", raw_data[i].id, raw_data[i].pw, raw_data[i].name);
-		//		}
-		//		MessageBox(str, L"회원", MB_OK);
-		//	}
-		//}
+		else
+		{
+			MessageBox(L"입력 정보가 다릅니다!", NULL, MB_OK);
+		}
 
 		// Query 문을 위해 할당할 메모리 해제
 		SQLFreeHandle(SQL_HANDLE_STMT, h_statement);
@@ -327,6 +292,9 @@ void LoginDialog::SelectQuery(wchar_t* query)
 // '회원가입' 버튼 클릭 이벤트
 void LoginDialog::OnBnClickedJoinBtn()
 {
-	CreateAccountDlg dlg;
+	//CreateAccountDlg dlg;
+	CreateAccountDlg dlg(mh_environment, mh_odbc);
 	dlg.DoModal();	
+
 }
+
