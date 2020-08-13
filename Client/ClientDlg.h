@@ -66,4 +66,5 @@ protected:
 	afx_msg LRESULT OnReadAndClose(WPARAM wParam, LPARAM lParam);
 public:
 	afx_msg void OnBnClickedConnectBtn();
+	afx_msg void OnBnClickedDisconnectBtn();
 };

@@ -74,4 +74,9 @@ protected:
 	
 	afx_msg LRESULT OnAcceptUser(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnReadAndClose(WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg void OnBnClickedStartBtn();
+	afx_msg void OnBnClickedSendBtn();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnBnClickedButton1();
 };

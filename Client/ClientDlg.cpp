@@ -54,7 +54,17 @@ BEGIN_MESSAGE_MAP(CClientDlg, CDialogEx)
 	ON_MESSAGE(26001, &CClientDlg::OnConnected)
 	ON_MESSAGE(26002, &CClientDlg::OnReadAndClose)
 	ON_BN_CLICKED(IDC_CONNECT_BTN, &CClientDlg::OnBnClickedConnectBtn)
+	ON_BN_CLICKED(IDC_DISCONNECT_BTN, &CClientDlg::OnBnClickedDisconnectBtn)
 END_MESSAGE_MAP()
+
+
+
+// 리스트 박스 메시지 추가
+void CClientDlg::AddEventString(CString parm_string)
+{
+	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
+	m_event_list.SetCurSel(index);                          // 추가한 곳(index) 커서 활성화
+}
 
 
 // CClientDlg 메시지 처리기
@@ -72,6 +82,10 @@ BOOL CClientDlg::OnInitDialog()
 	// 서버에 접속하기 (IP 주소가 '192.168.77.100'을 사용하고 포트 번호가 27100인 서버에 접속을 시도한다)
 	//m_client.ConnectToServer(L"192.168.77.100", 27100, m_hWnd);
 	
+
+	// '접속 해제' 버튼 비활성화
+	GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
+
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -115,11 +129,37 @@ HCURSOR CClientDlg::OnQueryDragIcon()
 
 
 
-// 리스트 박스 메시지 추가
-void CClientDlg::AddEventString(CString parm_string)
+
+// 서버 접속에 대한 결과를 알려주는 메시지를 처리한다 
+// FD_CONNECT : 26001 메시지
+afx_msg LRESULT CClientDlg::OnConnected(WPARAM wParam, LPARAM lParam)
 {
-	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
-	m_event_list.SetCurSel(index);                          // 추가한 곳(index) 커서 활성화
+	// 서버 접속에 대한 결과
+	if (m_client.ResultOfConnection(lParam) == 1) // 접속 성공
+	{
+		AddEventString(L"서버에 접속했습니다!");
+		GetDlgItem(IDC_CONNECT_BTN)->EnableWindow(FALSE);
+		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(TRUE);
+	}
+	else // 접속 실패
+	{
+		AddEventString(L"서버에 접속할수 없습니다!");
+	}
+
+	return 0;
+}
+
+
+// 접속한 서버에서 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다
+// FD_READ, FD_CLOSE : 26002 메시지
+afx_msg LRESULT CClientDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
+{
+	if (m_client.ProcessServerEvent(wParam, lParam) == 0) // ProcessServerEvent: FD_READ는 1, FD_CLOSE는 0 반환
+	{
+		AddEventString(L"서버와 연결이 해제되었습니다.");
+	}
+
+	return 0;
 }
 
 
@@ -144,55 +184,41 @@ void CClientDlg::OnBnClickedSendBtn()
 
 
 
-
-// 서버 접속에 대한 결과를 알려주는 메시지를 처리한다 
-// FD_CONNECT : 26001 메시지
-afx_msg LRESULT CClientDlg::OnConnected(WPARAM wParam, LPARAM lParam)
-{
-	// 서버 접속에 대한 결과
-	if (m_client.ResultOfConnection(lParam) == 1) // 접속 성공
-	{
-		AddEventString(L"서버에 접속했습니다!");
-	}
-	else // 접속 실패
-	{
-		AddEventString(L"서버에 접속할수 없습니다!");
-	}
-	
-	return 0;
-}
-
-
-// 접속한 서버에서 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다
-// FD_READ, FD_CLOSE : 26002 메시지
-afx_msg LRESULT CClientDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
-{
-	if (m_client.ProcessServerEvent(wParam, lParam) == 0) // ProcessServerEvent: FD_READ는 1, FD_CLOSE는 0 반환
-	{
-		AddEventString(L"서버와 연결이 해제되었습니다.");
-	}
-
-	return 0;
-}
-
-
 // '서버 접속' 버튼 클릭
 void CClientDlg::OnBnClickedConnectBtn()
 {
 	// 서버와 접속 상태인지 확인하여 서버와 접속중이라면 처리하지 않는다
 	if (!m_client.IsConnected()) // 서버에 접속중이 아니라면
 	{
-		CString str;
-		GetDlgItemText(IDC_IP_EDIT, str); // 사용자가 입력한 주소를 str에 가져온다
-		if (!str.IsEmpty())
+		CString ip, port;
+		GetDlgItemText(IDC_IP_EDIT, ip); 
+		GetDlgItemText(IDC_PORT_EDIT, port);
+
+		if (ip.IsEmpty() || port.IsEmpty())
 		{
-			AddEventString(L"서버에 접속을 시도합니다. : " + str);			
-			m_client.ConnectToServer(str, 27100, m_hWnd); // 사용자가 접속한 IP 주소에 포트 번호가 27100인 서버로 접속을 시도한다
+			MessageBox(L"IP 주소, 포트번호를 입력해 주세요!", NULL, MB_OK);
+			return;
+		}
+		else
+		{
+			AddEventString(L"서버에 접속을 시도합니다. : " + ip);			
+			m_client.ConnectToServer(ip, _ttoi(port), m_hWnd); // _ttoi : cstring -> int
 		}
 	}
 	else
 	{
 		AddEventString(L"이미 서버에 접속중 입니다.");
 	}
+}
 
+// '접속 해제' 버튼 클릭
+void CClientDlg::OnBnClickedDisconnectBtn()
+{
+	if (m_client.IsConnected()) // 서버에 접속중 이면
+	{
+		m_client.DisconnectSocket(m_client.GetHandle(), 0);
+		AddEventString(L"서버와 연결이 해제되었습니다.");
+		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
+		GetDlgItem(IDC_CONNECT_BTN)->EnableWindow(TRUE);
+	}
 }

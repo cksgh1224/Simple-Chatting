@@ -25,7 +25,9 @@
 #define IDC_CONNECT_BTN                 1006
 #define IDC_UTF_CHECK                   1007
 #define IDC_LOGIN_BTN                   1008
+#define IDC_PORT_EDIT                   1008
 #define IDC_SELECT_BTN                  1009
+#define IDC_DISCONNECT_BTN              1009
 #define IDC_JOIN_BTN                    1011
 #define IDC_BUTTON1                     1012
 #define IDC_ADD_BTN                     1012

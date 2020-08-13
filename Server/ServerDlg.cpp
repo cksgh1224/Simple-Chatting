@@ -112,6 +112,9 @@ BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_MESSAGE(25001, &CServerDlg::OnAcceptUser)
 	ON_MESSAGE(25002, &CServerDlg::OnReadAndClose)
+	ON_BN_CLICKED(IDC_START_BTN, &CServerDlg::OnBnClickedStartBtn)
+	ON_BN_CLICKED(IDC_SEND_BTN, &CServerDlg::OnBnClickedSendBtn)
+	ON_BN_CLICKED(IDC_USER_BTN, &CServerDlg::OnBnClickedButton1)
 END_MESSAGE_MAP()
 
 
@@ -137,8 +140,8 @@ BOOL CServerDlg::OnInitDialog()
 
 	// 서버 서비스를 '192.168.77.100'에서 27100 포트로 시작한다 (socket - bind - listen)
 	//m_server.StartServer(L"192.168.77.100", 27100, m_hWnd);
-	m_server.StartServer(L"127.0.0.1", 27100, m_hWnd);
-	AddEventString(L"서버 서비스를 시작합니다!");
+	//m_server.StartServer(L"127.0.0.1", 27100, m_hWnd);
+	//AddEventString(L"서버 서비스를 시작합니다!");
 
 
 
@@ -182,6 +185,13 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 }
 
 
+// Enter 종료 막기
+BOOL CServerDlg::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->wParam == VK_RETURN) return TRUE;
+	return CDialogEx::PreTranslateMessage(pMsg);
+}
+
 
 
 
@@ -202,4 +212,74 @@ afx_msg LRESULT CServerDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 	// ProcessClientEvent : 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리 함수)
 	m_server.ProcessClientEvent(wParam, lParam);
 	return 0;
+}
+
+
+
+
+
+
+// '시작' 버튼 클릭
+void CServerDlg::OnBnClickedStartBtn()
+{
+	CString ip, port;
+	GetDlgItemText(IDC_IP_EDIT, ip);
+	GetDlgItemText(IDC_PORT_EDIT, port);
+
+	if (ip.IsEmpty() || port.IsEmpty())
+	{
+		MessageBox(L"IP 주소, 포트번호를 입력해 주세요!", NULL, MB_OK);
+		return;
+	}
+
+	m_server.StartServer(ip, _ttoi(port), m_hWnd); // _ttoi : cstring -> int
+	AddEventString(L"서버 서비스를 시작합니다!");
+
+	GetDlgItem(IDC_START_BTN)->EnableWindow(FALSE);
+}
+
+
+// '전송' 버튼 클릭
+void CServerDlg::OnBnClickedSendBtn()
+{
+	UserData** user_list = m_server.GetUserList(); // 서버에 접속한 전체 사용자에 대한 정보
+	
+	CString str, text;
+	GetDlgItemText(IDC_CHAT_EDIT, text);
+	str.Format(L"%s : %s", L"Server", text);
+
+	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+	{
+		// 현재 사용자가 접속 상태인지 확인한다
+		if (user_list[i]->GetHandle() != INVALID_SOCKET)
+		{
+			m_server.SendFrameData(user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2); // 데이터 전송
+		}
+	}
+
+	AddEventString(str);
+}
+
+
+
+
+
+// '사용자 목록' 버튼 클릭
+void CServerDlg::OnBnClickedButton1()
+{
+	UserData** user_list = m_server.GetUserList(); // 서버에 접속한 전체 사용자에 대한 정보
+	CString str;
+	
+	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+	{
+		// 현재 사용자가 접속 상태인지 확인한다
+		if (user_list[i]->GetHandle() != INVALID_SOCKET)
+		{
+			str += user_list[i]->GetIP();
+			str += L"\n";
+		}
+	}
+
+	MessageBox(str, L"사용자 목록", MB_OK);
+
 }
