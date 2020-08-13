@@ -119,13 +119,10 @@ HCURSOR CClientDlg::OnQueryDragIcon()
 void CClientDlg::AddEventString(CString parm_string)
 {
 	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
-	m_event_list.SetCurSel(index); // 추가한 곳(index) 커서 활성화
+	m_event_list.SetCurSel(index);                          // 추가한 곳(index) 커서 활성화
 }
-void CClientDlg::AddEventString(const wchar_t* ap_string)
-{
-	int index = m_event_list.InsertString(-1, ap_string);
-	m_event_list.SetCurSel(index);
-}
+
+
 
 
 // '전송' 버튼 클릭 이벤트
@@ -192,6 +189,10 @@ void CClientDlg::OnBnClickedConnectBtn()
 			AddEventString(L"서버에 접속을 시도합니다. : " + str);			
 			m_client.ConnectToServer(str, 27100, m_hWnd); // 사용자가 접속한 IP 주소에 포트 번호가 27100인 서버로 접속을 시도한다
 		}
+	}
+	else
+	{
+		AddEventString(L"이미 서버에 접속중 입니다.");
 	}
 
 }

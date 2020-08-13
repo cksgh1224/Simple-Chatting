@@ -40,7 +40,8 @@ BOOL CClientApp::InitInstance()
 {
 	CWinApp::InitInstance();
 
-	LoginDialog dlg;
+	CClientDlg dlg;
+	//LoginDialog dlg;
 	m_pMainWnd = &dlg;
 	dlg.DoModal();
 

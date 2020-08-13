@@ -4,8 +4,8 @@
 
 #pragma once
 
-#define MAX_CLIENT_COUNT 50   // 서버에 접속 가능한 클라이언트 수
-#define NM_CHAT_DATA      1   // 채팅 Message ID
+#define MAX_CLIENT_COUNT  3   // 서버에 접속 가능한 클라이언트 수
+#define NM_CHAT_DATA      1   // 채팅 데이터의 Message ID (1)
 
 class CServerDlg; // 전방선언
 
@@ -16,10 +16,9 @@ private:
 
 public:
 	// CServerDlg 대화상자의 m_event_list(리스트 박스) 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
-	// CServerDlg 생성자에 m_server(this) 추가
 	MyServer(CServerDlg* ap_parent) : ServerSocket(0x27, MAX_CLIENT_COUNT, new UserData)
 	{
-		// 프로토콜 헤더의 시작 바이트를(구분값) 0x27로 하고 최대 사용자 수를 50명으로 정한다, 사용자 관리용 클래스는 UserData를 사용한다
+		// 프로토콜 구분값 27, 최대 사용자 수 50명, 사용자 관리용 클래스는 UserData
 		mp_parent = ap_parent;
 	}
 	
@@ -27,10 +26,10 @@ public:
 	// Accept 시에 추가적으로 해야할 작업 처리
 	virtual void AddWorkForAccept(UserData* ap_user);
 
-	// 최대 사용자수 초과시에 추가적으로 해야할 작업 처리 (미구현)
+	// 최대 사용자수 초과 시에 추가적으로 해야할 작업 처리 (미구현)
 	virtual void ShowLimitError(const wchar_t* ap_ip_address);
 
-	// 클라이언트 접속 해제시에 추가적으로 해야할 작업 처리
+	// 클라이언트 접속 해제 시에 추가적으로 해야할 작업 처리
 	virtual void AddWorkForCloseUser(UserData* ap_user, int a_error_code);
 
 	// 수신된 데이터를 처리하는 함수
@@ -47,10 +46,9 @@ private:
 
 // 생성입니다.
 public:
-	CServerDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+	CServerDlg(CWnd* pParent = nullptr);	// CServerDlg 생성자에 m_server(this) 추가
 	
 	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가
-	void AddEventString(const wchar_t* ap_string);
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME

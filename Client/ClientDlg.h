@@ -16,7 +16,6 @@ private:
 
 public:
 	// CClientDlg 대화상자의 리스트 박스 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
-	// CClientDlg 생성자에 m_client(this) 추가
 	MyClient(CClientDlg* ap_parent) : ClientSocket(0x27) // 프로토콜 헤더의 시작 1바이트를 0x27로 설정 (구분값)
 	{
 		mp_parent = ap_parent;
@@ -35,11 +34,9 @@ private:
 
 // 생성입니다.
 public:
-	CClientDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+	CClientDlg(CWnd* pParent = nullptr);	// CClientDlg 생성자에 m_client(this) 추가
 
-	// 리스트 박스 메시지 추가
-	void AddEventString(CString parm_string); 
-	void AddEventString(const wchar_t* ap_string); 
+	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가  
 
 
 // 대화 상자 데이터입니다.

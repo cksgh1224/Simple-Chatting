@@ -12,14 +12,3 @@
 
 #endif //PCH_H
 
-
-
-//#include "SocketAPI.h"
-//
-//#pragma comment(lib, "WS2_32.lib")
-//
-//#ifdef _DEBUG
-//#pragma comment(lib, "D_SocketAPI.lib") // Debug 
-//#else 
-//#pragma comment(lib, "R_SocketAPI.lib") // Release
-//#endif

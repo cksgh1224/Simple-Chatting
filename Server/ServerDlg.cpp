@@ -31,7 +31,9 @@ void MyServer::AddWorkForAccept(UserData* ap_user)
 // 최대 사용자수 초과시에 추가적으로 해야할 작업 처리
 void MyServer::ShowLimitError(const wchar_t* ap_ip_address)
 {
-	
+	CString str;
+	str.Format(L"최대 접속인원 초과!");
+	mp_parent->AddEventString(str);
 }
 
 
@@ -47,8 +49,8 @@ void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 
 
 // 수신된 데이터를 처리하는 함수
-// ah_socket: 데이터를 전송한 클라이언트 소켓의 핸들, a_msg_id: 클라이언트가 보낸 데이터가 어떤 종류의 데이터인지
-// ap_recv_data: 클라이언트가 보낸 데엍, a_body_size: 클라이언트가 보낸 데이터의 body size (헤더를 뺀 바디 크기)
+// ah_socket    : 데이터를 전송한 클라이언트 소켓의 핸들, a_msg_id: 클라이언트가 보낸 데이터가 어떤 종류의 데이터인지
+// ap_recv_data : 클라이언트가 보낸 데엍, a_body_size: 클라이언트가 보낸 데이터의 body size (헤더를 뺀 바디 크기)
 int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
 {
 	// 대용량 데이터가 전송 또는 수신될 때, 필요한 기본 코드를 수행
@@ -64,7 +66,7 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 		mp_parent->AddEventString(str);
 		
 		// 서버에 연결된 모든 클라이언트들에게 수신된 데이터를 전송
-		for (int i = 0; i < m_max_user_count; i++)
+		for (int i = 0; i < MAX_CLIENT_COUNT; i++)
 		{
 			// 현재 사용자가 접속 상태인지 확인한다
 			if (mp_user_list[i]->GetHandle() != INVALID_SOCKET)
@@ -86,8 +88,11 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 
 
 
-// CServerDlg 대화 상자
 
+
+
+
+// CServerDlg 대화 상자
 
 
 CServerDlg::CServerDlg(CWnd* pParent /*=nullptr*/)
@@ -114,12 +119,7 @@ END_MESSAGE_MAP()
 void CServerDlg::AddEventString(CString parm_string)
 {
 	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
-	m_event_list.SetCurSel(index); // 추가한 곳(index) 커서 활성화
-}
-void CServerDlg::AddEventString(const wchar_t* ap_string)
-{
-	int index = m_event_list.InsertString(-1, ap_string);
-	m_event_list.SetCurSel(index);
+	m_event_list.SetCurSel(index);                          // 추가한 곳(index) 커서 활성화
 }
 
 
@@ -136,8 +136,11 @@ BOOL CServerDlg::OnInitDialog()
 
 
 	// 서버 서비스를 '192.168.77.100'에서 27100 포트로 시작한다 (socket - bind - listen)
-	m_server.StartServer(L"192.168.77.100", 27100, m_hWnd);
+	//m_server.StartServer(L"192.168.77.100", 27100, m_hWnd);
+	m_server.StartServer(L"127.0.0.1", 27100, m_hWnd);
 	AddEventString(L"서버 서비스를 시작합니다!");
+
+
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -180,10 +183,13 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 
 
 
+
+
 // 새로운 클라이언트가 접속했을 때 발생하는 메시지를 처리한다
 // FD_ACCEPT : 25001 메시지
 afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 {
+	// ProcessToAccept: 클라이언트의 접속 처리(FD_ACCEPT 처리)
 	m_server.ProcessToAccept(wParam, lParam);
 	return 0;
 }
@@ -193,6 +199,7 @@ afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 // FD_READ, FD_CLOSE : 25002 메시지
 afx_msg LRESULT CServerDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 {
+	// ProcessClientEvent : 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리 함수)
 	m_server.ProcessClientEvent(wParam, lParam);
 	return 0;
 }

@@ -11,12 +11,4 @@
 #include "framework.h"
 
 
-// ODBC API를 사용하기 위한 헤더 파일 추가
-#include <odbcinst.h>
-#include <sqlext.h>
-
-// ODBC API를 사용하기 위한 라이브러리 추가
-#pragma comment(lib, "odbc32.lib")
-
-
 #endif //PCH_H
