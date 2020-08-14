@@ -6,19 +6,18 @@
 class CreateAccountDlg : public CDialogEx
 {
 private:
-	SQLHANDLE mh_environment;  // ODBC 기술을 사용하기 위한 환경 정보
-	SQLHDBC mh_odbc;           // ODBC 함수를 사용하기 위한 정보
+	My_Odbc my_odbc;
+	bool id_check;  // 사용 가능한 아이디인지 체크할 변수 (아이디 중복확인)
 
 	DECLARE_DYNAMIC(CreateAccountDlg)
 
 public:
-	CreateAccountDlg(CWnd* pParent = nullptr);   // 표준 생성자입니다.
-	CreateAccountDlg(SQLHANDLE environment, SQLHDBC odbc, CWnd* pParent = nullptr); 
-	virtual ~CreateAccountDlg();
+	CreateAccountDlg(My_Odbc odbc, CWnd* pParent = nullptr);   // 생성자에서 MyOdbc 객체를 넘겨받아 my_odbc에 저장한다
+	virtual CreateAccountDlg::~CreateAccountDlg();
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_JOIN_DIALOG };
+	enum { IDD = IDD_CREATEACCOUNT_DIALOG };
 #endif
 
 protected:
@@ -27,5 +26,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedAddBtn(); // 회원가입 버튼 이벤트
-	void InsertQuery(CString& query); // Insert 문 수행
+	
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnBnClickedIdcheckBtn();
 };

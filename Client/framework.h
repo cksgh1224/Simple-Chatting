@@ -16,6 +16,8 @@
 
 
 
+
+
 // 윈도우 소켓 관련 헤더파일, 라이브러리
 #include "SocketAPI.h"
 
@@ -29,12 +31,14 @@
 
 
 
-// ODBC API를 사용하기 위한 헤더 파일 추가
-#include <odbcinst.h>
-#include <sqlext.h>
+// ODBC_API 헤더파일, 라이브러리
+#include "My_ODBC.h"
 
-// ODBC API를 사용하기 위한 라이브러리 추가
-#pragma comment(lib, "odbc32.lib")
+#ifdef _DEBUG
+	#pragma comment(lib, "D_My_ODBC.lib")
+#else
+	#pragma comment(lib, "R_My_ODBC.lib")
+#endif
 
 
 
