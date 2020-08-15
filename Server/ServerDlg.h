@@ -13,6 +13,8 @@ class MyServer : public ServerSocket
 {
 private:
 	CServerDlg* mp_parent; // 대화상자 객체의 주소를 저장할 변수 (리스트 박스 작업을 할 때 사용)
+	
+	int user_count;        // 접속한 사용자 수
 
 public:
 	// CServerDlg 대화상자의 m_event_list(리스트 박스) 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
@@ -20,6 +22,7 @@ public:
 	{
 		// 프로토콜 구분값 27, 최대 사용자 수 50명, 사용자 관리용 클래스는 UserData
 		mp_parent = ap_parent;
+		user_count = 0;
 	}
 	
 
@@ -34,6 +37,10 @@ public:
 
 	// 수신된 데이터를 처리하는 함수
 	virtual int ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size);
+
+
+
+	int inline GetUserCount() { return user_count; } // 서버에 접속한 사용자 수 
 };
 
 

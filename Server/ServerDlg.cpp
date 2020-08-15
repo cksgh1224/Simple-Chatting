@@ -25,6 +25,8 @@ void MyServer::AddWorkForAccept(UserData* ap_user)
 	CString str;
 	str.Format(L"%s 에서 사용자가 접속했습니다!", ap_user->GetIP());
 	mp_parent->AddEventString(str);
+
+	user_count++;
 }
 
 
@@ -45,6 +47,8 @@ void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 	CString str;
 	str.Format(L"%s 에서 사용자가 접속을 해제했습니다!", ap_user->GetIP());
 	mp_parent->AddEventString(str);
+
+	user_count--;
 }
 
 
@@ -138,12 +142,11 @@ BOOL CServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 
-	// 서버 서비스를 '192.168.77.100'에서 27100 포트로 시작한다 (socket - bind - listen)
-	//m_server.StartServer(L"192.168.77.100", 27100, m_hWnd);
-	//m_server.StartServer(L"127.0.0.1", 27100, m_hWnd);
-	//AddEventString(L"서버 서비스를 시작합니다!");
 
+	GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
+	GetDlgItem(IDC_USER_BTN)->EnableWindow(FALSE);
 
+	
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -185,13 +188,13 @@ HCURSOR CServerDlg::OnQueryDragIcon()
 }
 
 
-// Enter 종료 막기
+
+// Enter키 막기
 BOOL CServerDlg::PreTranslateMessage(MSG* pMsg)
 {
-	if (pMsg->wParam == VK_RETURN) return TRUE;
+	//if (pMsg->wParam == VK_RETURN) return TRUE;
 	return CDialogEx::PreTranslateMessage(pMsg);
 }
-
 
 
 
@@ -232,16 +235,32 @@ void CServerDlg::OnBnClickedStartBtn()
 		return;
 	}
 
-	m_server.StartServer(ip, _ttoi(port), m_hWnd); // _ttoi : cstring -> int
-	AddEventString(L"서버 서비스를 시작합니다!");
+	int state = m_server.StartServer(ip, _ttoi(port), m_hWnd); // _ttoi : cstring -> int
+	if (state == 1) // 정상적으로 서버 실행
+	{
+		AddEventString(L"서버 서비스를 시작합니다!");
 
-	GetDlgItem(IDC_START_BTN)->EnableWindow(FALSE);
+		GetDlgItem(IDC_START_BTN)->EnableWindow(FALSE);
+		GetDlgItem(IDC_SEND_BTN)->EnableWindow(TRUE);
+		GetDlgItem(IDC_USER_BTN)->EnableWindow(TRUE);
+	}
+	else // StartServer 에서 에러 발생
+	{
+		MessageBox(L"서버를 실행할 수 없습니다\n(IP 주소를 확인해 주세요)", NULL, MB_OK);
+	}
 }
 
 
 // '전송' 버튼 클릭
 void CServerDlg::OnBnClickedSendBtn()
 {
+	if (m_server.GetUserCount() == 0)
+	{
+		AddEventString(L"서버에 접속한 사용자가 없습니다");
+		SetDlgItemText(IDC_CHAT_EDIT, L"");
+		return;
+	}
+	
 	UserData** user_list = m_server.GetUserList(); // 서버에 접속한 전체 사용자에 대한 정보
 	
 	CString str, text;
@@ -258,6 +277,7 @@ void CServerDlg::OnBnClickedSendBtn()
 	}
 
 	AddEventString(str);
+	SetDlgItemText(IDC_CHAT_EDIT, L"");
 }
 
 
@@ -267,6 +287,12 @@ void CServerDlg::OnBnClickedSendBtn()
 // '사용자 목록' 버튼 클릭
 void CServerDlg::OnBnClickedButton1()
 {
+	if (m_server.GetUserCount() == 0)
+	{
+		MessageBox(L"서버에 접속한 사용자가 없습니다", NULL, MB_OK);
+		return;
+	}
+	
 	UserData** user_list = m_server.GetUserList(); // 서버에 접속한 전체 사용자에 대한 정보
 	CString str;
 	
@@ -281,5 +307,4 @@ void CServerDlg::OnBnClickedButton1()
 	}
 
 	MessageBox(str, L"사용자 목록", MB_OK);
-
 }

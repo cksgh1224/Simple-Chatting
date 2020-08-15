@@ -12,7 +12,7 @@
 #define new DEBUG_NEW
 #endif
 
-
+	
 
 // 수신된 데이터를 처리하는 함수
 int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
@@ -20,12 +20,9 @@ int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 	// 대용량 데이터가 전송 또는 수신될 때, 필요한 기본 코드를 수행
 	ClientSocket::ProcessRecvData(ah_socket, a_msg_id, ap_recv_data, a_body_size);
 	
-	
 	if (a_msg_id == NM_CHAT_DATA) // 수신된 데이터가 채팅 데이터인 경우
 	{
-		// 수신된 데이터에 대한 채팅 정보가 유니코드 형태의 문자열로 저장되어 있기 때문에 
-		// 유니코드 문자열 형태로 캐스팅하여 리스트 박스에 추가
-		mp_parent->AddEventString((wchar_t*)ap_recv_data);
+		mp_parent->AddEventString((wchar_t*)ap_recv_data); // 수신된 데이터가 유니코드 형태의 문자열로 저장되어 있기 때문에 형변환 필요
 	}
 
 	return 1;
@@ -79,13 +76,10 @@ BOOL CClientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	
-	// 서버에 접속하기 (IP 주소가 '192.168.77.100'을 사용하고 포트 번호가 27100인 서버에 접속을 시도한다)
-	//m_client.ConnectToServer(L"192.168.77.100", 27100, m_hWnd);
 	
-
-	// '접속 해제' 버튼 비활성화
-	GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
-
+	GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE); 
+	GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
+	
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -138,8 +132,14 @@ afx_msg LRESULT CClientDlg::OnConnected(WPARAM wParam, LPARAM lParam)
 	if (m_client.ResultOfConnection(lParam) == 1) // 접속 성공
 	{
 		AddEventString(L"서버에 접속했습니다!");
-		GetDlgItem(IDC_CONNECT_BTN)->EnableWindow(FALSE);
+
+		GetDlgItem(IDC_CONNECT_BTN)->EnableWindow(FALSE);       
 		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(TRUE);
+
+		GetDlgItem(IDC_IP_EDIT)->EnableWindow(FALSE);
+		GetDlgItem(IDC_PORT_EDIT)->EnableWindow(FALSE);
+
+		GetDlgItem(IDC_SEND_BTN)->EnableWindow(TRUE);
 	}
 	else // 접속 실패
 	{
@@ -154,11 +154,27 @@ afx_msg LRESULT CClientDlg::OnConnected(WPARAM wParam, LPARAM lParam)
 // FD_READ, FD_CLOSE : 26002 메시지
 afx_msg LRESULT CClientDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 {
-	if (m_client.ProcessServerEvent(wParam, lParam) == 0) // ProcessServerEvent: FD_READ는 1, FD_CLOSE는 0 반환
+	// ProcessServerEvent: FD_READ는 1, FD_CLOSE는 0 반환
+	// FD_CLOSE ->  SocketAPI에서 소켓 해제에 관한 처리를 다 해줌
+	// FD_READ  ->  ProcessServerEvent - ProcessRecvEvent - ProcessRecvData (ProcessRecvData 함수만 재정의 해주면 된다)
+	
+	if (m_client.ProcessServerEvent(wParam, lParam) == 0)  // 서버에서 연결을 끊은 경우
 	{
-		AddEventString(L"서버와 연결이 해제되었습니다.");
-	}
+		AddEventString(L"서버에서 연결을 해제했습니다.");
 
+		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
+		GetDlgItem(IDC_CONNECT_BTN)->EnableWindow(TRUE);
+
+		GetDlgItem(IDC_IP_EDIT)->EnableWindow(TRUE);
+		GetDlgItem(IDC_PORT_EDIT)->EnableWindow(TRUE);
+
+		GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
+	}
+	else
+	{
+		// FD_READ
+	}
+	
 	return 0;
 }
 
@@ -168,18 +184,15 @@ afx_msg LRESULT CClientDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 // '전송' 버튼 클릭 이벤트
 void CClientDlg::OnBnClickedSendBtn()
 {
-	CString str;
-	GetDlgItemText(IDC_CHAT_EDIT, str); // IDC_CHAT_EDIT 에디트 박스에 입력된 문자열을 str에 가져온다
-	SetDlgItemText(IDC_CHAT_EDIT, L"");
-
-	// 서버와 접속 상태인지 확인한다
 	if (m_client.IsConnected() == 1) // 서버에 접속중
 	{
-		m_client.SendFrameData(NM_CHAT_DATA, (char*)(const wchar_t*)str, (str.GetLength() + 1) * 2); // 서버에 채팅 데이터 전송
-		// 문자열을 전송할 때는 NULL 문자를 포함해서 전송하기 때문에 문자열 길이에 1을 더하고 
-		// 유니코드에서 문자 1개는 2byte를 차지하기 때문에 문자열 길이에 2를 곱한다
-	}
+		CString str;
+		GetDlgItemText(IDC_CHAT_EDIT, str);
+		SetDlgItemText(IDC_CHAT_EDIT, L"");
 
+		m_client.SendFrameData(NM_CHAT_DATA, (char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
+		// 문자열을 전송할 때는 NULL 문자를 포함해서 전송하기 때문에 문자열 길이에 1을 더하고. 유니코드에서 문자 1개는 2byte를 차지하기 때문에 문자열 길이에 2를 곱한다
+	}
 }
 
 
@@ -218,7 +231,13 @@ void CClientDlg::OnBnClickedDisconnectBtn()
 	{
 		m_client.DisconnectSocket(m_client.GetHandle(), 0);
 		AddEventString(L"서버와 연결이 해제되었습니다.");
+
 		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
 		GetDlgItem(IDC_CONNECT_BTN)->EnableWindow(TRUE);
+
+		GetDlgItem(IDC_IP_EDIT)->EnableWindow(TRUE);
+		GetDlgItem(IDC_PORT_EDIT)->EnableWindow(TRUE);
+
+		GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
 	}
 }
