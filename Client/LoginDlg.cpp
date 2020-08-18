@@ -7,6 +7,7 @@
 #include "afxdialogex.h"
 
 
+#include "LoginMenuDlg.h"        // 로그인 메뉴 대화상자
 #include "ClientDlg.h"           // 채팅 대화상자
 #include "CreateAccountDlg.h"    // 회원가입 대화상자
 #include "FindIdDlg.h"           // 아이디 찾기 대화상자
@@ -114,10 +115,8 @@ void LoginDialog::OnBnClickedLoginBtn()
 
 	if (my_odbc.ExecQuery(query, sizeof(UserAccount), SetRecordInfo, ResultRecord, 1)) // query 실행
 	{
-		login_data = select_data;
-		
 		::SendMessage(this->m_hWnd, WM_CLOSE, NULL, NULL); // 대화상자 종료
-		CClientDlg dlg(login_data); // 채팅창 띄우기
+		LoginMenuDlg dlg; // 채팅창 띄우기
 		dlg.DoModal();
 	}
 	else

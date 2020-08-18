@@ -9,6 +9,7 @@
 #define IDD_CREATEACCOUNT_DIALOG        132
 #define IDD_FINDID_DIALOG               134
 #define IDD_FINDPW_DIALOG               136
+#define IDD_LOGINMENU_DIALOG            138
 #define IDC_LIST1                       1000
 #define IDC_EVENT_LIST                  1000
 #define IDC_EDIT1                       1001
@@ -35,16 +36,19 @@
 #define IDC_BUTTON1                     1012
 #define IDC_ADD_BTN                     1012
 #define IDC_FINDID_BTN                  1012
+#define IDC_CHAT_BTN                    1012
 #define IDC_BUTTON2                     1013
 #define IDC_IDCHECK_BTN                 1013
 #define IDC_CREATEACCOUNT_BTN3          1013
 #define IDC_FINDPW_BTN                  1013
+#define IDC_UPDATE_BTN                  1013
+#define IDC_DELETE_BTN                  1014
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        138
+#define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1014
 #define _APS_NEXT_SYMED_VALUE           101
