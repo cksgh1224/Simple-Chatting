@@ -217,7 +217,7 @@ afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 	// ProcessToAccept: 클라이언트의 접속 처리(FD_ACCEPT 처리)
 	m_server.ProcessToAccept(wParam, lParam);
 
-	dlg_user_list = (UserAccount**)m_server.GetUserList();   // 서버에 접속한 사용자 목록을 가져온다
+	dlg_user_list = m_server.GetUserList();   // 서버에 접속한 사용자 목록을 가져온다
 	
 	return 0;
 }

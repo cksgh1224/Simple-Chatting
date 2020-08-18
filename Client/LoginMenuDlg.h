@@ -1,13 +1,13 @@
 ﻿#pragma once
 
-extern UserAccount select_data; // pch.cpp 에 선언된 select_data (전역변수)를 사용하기 위해 extern 선언
+extern UserData select_data; // pch.cpp 에 선언된 select_data (전역변수)를 사용하기 위해 extern 선언
 
 // LoginMenuDlg 대화 상자
 
 class LoginMenuDlg : public CDialogEx
 {
 private:
-	UserAccount login_data; // select 문의 결과를 저장할 객체
+	UserData login_data; // select 문의 결과를 저장할 객체
 
 	DECLARE_DYNAMIC(LoginMenuDlg)
 

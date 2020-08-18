@@ -59,7 +59,7 @@ void FindIdDlg::OnBnClickedFindidBtn()
 
 	query.Format(L" select mid, mpw, mname from user where mname='%s' and mnickname='%s' ", name, nickname);
 
-	if (my_odbc.ExecQuery(query, sizeof(UserAccount), SetRecordInfo, ResultRecord, 2))
+	if (my_odbc.ExecQuery(query, sizeof(UserData), SetRecordInfo, ResultRecord, 2))
 	{
 		::SendMessage(this->m_hWnd, WM_CLOSE, NULL, NULL); // 대화상자 종료
 	}

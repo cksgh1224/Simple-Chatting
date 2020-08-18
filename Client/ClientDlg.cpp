@@ -12,7 +12,7 @@
 #define new DEBUG_NEW
 #endif
 
-	
+
 
 // 수신된 데이터를 처리하는 함수
 int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
@@ -35,7 +35,7 @@ int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 
 // CClientDlg 대화 상자
 
-CClientDlg::CClientDlg(UserAccount a_user, CWnd* pParent /*=nullptr*/)
+CClientDlg::CClientDlg(UserData a_user, CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CLIENT_DIALOG, pParent), m_client(this) // m_client(this): 객체를 생성할 때 대화상자의 주소를 넘겨준다
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);

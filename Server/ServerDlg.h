@@ -53,7 +53,7 @@ class CServerDlg : public CDialogEx
 private:
 	MyServer m_server;
 
-	UserAccount** dlg_user_list;  // 서버에 접속한 전체 사용자에 대한 정보
+	UserData** dlg_user_list;  // 서버에 접속한 전체 사용자에 대한 정보
 
 // 생성입니다.
 public:

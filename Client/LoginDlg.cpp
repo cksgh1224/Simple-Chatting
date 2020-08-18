@@ -93,7 +93,7 @@ void LoginDialog::OnDestroy()
 void LoginDialog::OnBnClickedSelectBtn()
 {
 	CString query = L" select mid, mpw, mname from user ";
-	my_odbc.ExecQuery(query, sizeof(UserAccount), SetRecordInfo, ResultRecord, 0);
+	my_odbc.ExecQuery(query, sizeof(UserData), SetRecordInfo, ResultRecord, 0);
 }
 
 
@@ -113,7 +113,7 @@ void LoginDialog::OnBnClickedLoginBtn()
 	
 	query.Format(L" select * from user where mid='%s' and mpw='%s' ", id, pw);
 
-	if (my_odbc.ExecQuery(query, sizeof(UserAccount), SetRecordInfo, ResultRecord, 1)) // query 실행
+	if (my_odbc.ExecQuery(query, sizeof(UserData), SetRecordInfo, ResultRecord, 1)) // query 실행
 	{
 		::SendMessage(this->m_hWnd, WM_CLOSE, NULL, NULL); // 대화상자 종료
 		LoginMenuDlg dlg; // 채팅창 띄우기

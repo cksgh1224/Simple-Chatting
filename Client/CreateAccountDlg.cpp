@@ -113,7 +113,7 @@ void CreateAccountDlg::OnBnClickedIdcheckBtn()
 	query.Format(L" select mid from user where mid='%s' ", id);
 
 	// ExecQuery가 성공 -> 입력한 아이디 검색 성공 -> 이미 있는 아이디 -> 아이디 사용 불가
-	if (my_odbc.ExecQuery(query, sizeof(UserAccount), SetRecordInfo, ResultRecord, 4))
+	if (my_odbc.ExecQuery(query, sizeof(UserData), SetRecordInfo, ResultRecord, 4))
 	{
 		id_check = false;
 		MessageBox(id + L" 사용할 수 없는 아이디 입니다", NULL, MB_OK);

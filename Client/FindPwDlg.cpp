@@ -59,7 +59,7 @@ void FindPwDlg::OnBnClickedFindpwBtn()
 
 	query.Format(L" select mid, mpw, mname from user where mid='%s' and mip='%s' ", id, ip);
 
-	if (my_odbc.ExecQuery(query, sizeof(UserAccount), SetRecordInfo, ResultRecord, 3))
+	if (my_odbc.ExecQuery(query, sizeof(UserData), SetRecordInfo, ResultRecord, 3))
 	{
 		::SendMessage(this->m_hWnd, WM_CLOSE, NULL, NULL); // 대화상자 종료
 	}
