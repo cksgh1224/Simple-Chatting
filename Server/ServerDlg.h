@@ -5,7 +5,9 @@
 #pragma once
 
 #define MAX_CLIENT_COUNT  3   // 서버에 접속 가능한 클라이언트 수
-#define NM_CHAT_DATA      1   // 채팅 데이터의 Message ID (1)
+
+#define NM_CHAT_DATA      1   // 채팅 데이터   Message ID
+#define NM_LOGIN_DATA     2   // 로그인 데이터 Message ID
 
 class CServerDlg; // 전방선언
 
@@ -14,7 +16,8 @@ class MyServer : public ServerSocket
 private:
 	CServerDlg* mp_parent; // 대화상자 객체의 주소를 저장할 변수 (리스트 박스 작업을 할 때 사용)
 	
-	int user_count;        // 접속한 사용자 수
+
+	int user_count;        // 접속한 사용자 수 (dlg 클래스에 선언하는게 맞지 않나? 어떻게 사용하지?)
 
 public:
 	// CServerDlg 대화상자의 m_event_list(리스트 박스) 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
@@ -50,6 +53,7 @@ class CServerDlg : public CDialogEx
 private:
 	MyServer m_server;
 
+	UserAccount** dlg_user_list;  // 서버에 접속한 전체 사용자에 대한 정보
 
 // 생성입니다.
 public:

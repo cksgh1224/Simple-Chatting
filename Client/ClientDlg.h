@@ -4,8 +4,8 @@
 
 #pragma once
 
-#define NM_CHAT_DATA      1   // 채팅 Message ID
-
+#define NM_CHAT_DATA      1   // 채팅 데이터   Message ID
+#define NM_LOGIN_DATA     2   // 로그인 데이터 Message ID
 
 class CClientDlg;
 
@@ -32,9 +32,11 @@ class CClientDlg : public CDialogEx
 private:
 	MyClient m_client;
 
+	UserAccount user_data; // 로그인 정보를 담고있는 객체
+
 // 생성입니다.
 public:
-	CClientDlg(CWnd* pParent = nullptr);	// CClientDlg 생성자에 m_client(this) 추가
+	CClientDlg(UserAccount a_user, CWnd* pParent = nullptr);	// CClientDlg 생성자에 m_client(this) 추가
 
 	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가  
 

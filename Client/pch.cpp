@@ -9,6 +9,10 @@
 // 데이터 객체 -> SocketAPI -> UserAccount class
 
 
+UserAccount select_data; // ResultRecord 에서 Select 문의 결과를 저장할 객체 (전역변수 - 사용하는 파일에서 extern 으로 선언해서 사용)
+// static: 전역범위의 변수에 static이 사용된경우, 해당 파일 내부에서는 전역변수처럼 사용되지만 다른 소스파일에서는 참조할 수 없음
+
+
 // Query의 결과에 해당하는 데이터를 User 객체와 연결하기 위한 코드 구성
 void SetRecordInfo(void* ap_owner, HSTMT ah_statement, void* ap_data)
 {	
@@ -18,6 +22,9 @@ void SetRecordInfo(void* ap_owner, HSTMT ah_statement, void* ap_data)
 	SQLBindCol(ah_statement, 1, SQL_WCHAR, p->GetID(), sizeof(wchar_t) * 20, NULL);
 	SQLBindCol(ah_statement, 2, SQL_WCHAR, p->GetPW(), sizeof(wchar_t) * 20, NULL);
 	SQLBindCol(ah_statement, 3, SQL_WCHAR, p->GetName(), sizeof(wchar_t) * 20, NULL);
+	SQLBindCol(ah_statement, 4, SQL_WCHAR, p->GetIP(), sizeof(wchar_t) * 32, NULL);
+	SQLBindCol(ah_statement, 6, SQL_WCHAR, p->GetNickName(), sizeof(wchar_t) * 32, NULL);
+	// 5 : mregdata (가입일)
 }
 
 
@@ -31,6 +38,15 @@ int ResultRecord(void* ap_owner, int a_step_index, void* ap_data, ULONG a_count,
 	CString str;
 	UserAccount* p = (UserAccount*)ap_data;
 	
+
+	// 검색 결과를 user에 저장
+	select_data.SetID(p->GetID());
+	select_data.SetPW(p->GetPW());
+	select_data.SetName(p->GetName());
+	select_data.SetIP(p->GetIP());
+	select_data.SetNickName(p->GetNickName());
+
+
 	// 전체 사용자 검색
 	if (option == 0)
 	{

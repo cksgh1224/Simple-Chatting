@@ -18,6 +18,9 @@
 int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
 {
 	// 대용량 데이터가 전송 또는 수신될 때, 필요한 기본 코드를 수행
+	// message_id 251 : 서버에 대용량의 데이터를 전송할때 사용하는 예약번호
+	// message_id 252 : 대용량의 데이터를 수신할 때 사용하는 예약번호 (아직 추가로 수신할 데이터가 있다)
+	// message_id 253 : 대용량의 데이터를 수신할 때 사용하는 예약번호 (더이상 전송할 데이터가 없다)
 	ClientSocket::ProcessRecvData(ah_socket, a_msg_id, ap_recv_data, a_body_size);
 	
 	if (a_msg_id == NM_CHAT_DATA) // 수신된 데이터가 채팅 데이터인 경우
@@ -32,10 +35,11 @@ int MyClient::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 
 // CClientDlg 대화 상자
 
-CClientDlg::CClientDlg(CWnd* pParent /*=nullptr*/)
+CClientDlg::CClientDlg(UserAccount a_user, CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CLIENT_DIALOG, pParent), m_client(this) // m_client(this): 객체를 생성할 때 대화상자의 주소를 넘겨준다
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	user_data = a_user;
 }
 
 void CClientDlg::DoDataExchange(CDataExchange* pDX)
@@ -216,6 +220,12 @@ void CClientDlg::OnBnClickedConnectBtn()
 		{
 			AddEventString(L"서버에 접속을 시도합니다. : " + ip);			
 			m_client.ConnectToServer(ip, _ttoi(port), m_hWnd); // _ttoi : cstring -> int
+
+
+			// 로그인 정보 서버에게 보내기...
+			CString id = user_data.GetID();
+			m_client.SendFrameData(NM_LOGIN_DATA, (char*)(const wchar_t*)id, (id.GetLength() + 1) * 2);
+
 		}
 	}
 	else

@@ -11,7 +11,7 @@
 #include "framework.h"
 
 
-
+// 데이터 객체 -> SocketAPI -> UserAccount class
 
 
 // Query의 결과에 해당하는 데이터를 User 객체와 연결하기 위한 코드 구성

@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 
+extern UserAccount select_data; // pch.cpp 에 선언된 select_data (전역변수)를 사용하기 위해 extern 선언
+
 // LoginDialog 대화 상자
 
 class LoginDialog : public CDialogEx
@@ -8,6 +10,8 @@ class LoginDialog : public CDialogEx
 private:
 	My_Odbc my_odbc;    // ODBC를 사용하기 위한 객체
 	
+	UserAccount login_data;     // select 문의 결과를 저장할 객체
+
 	DECLARE_DYNAMIC(LoginDialog)
 
 public:

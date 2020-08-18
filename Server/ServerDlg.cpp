@@ -58,6 +58,9 @@ void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
 {
 	// 대용량 데이터가 전송 또는 수신될 때, 필요한 기본 코드를 수행
+	// message_id 251 : 클라이언트에게 대용량의 데이터를 전송할때 사용하는 예약번호
+	// message_id 252 : 대용량의 데이터를 수신할 때 사용하는 예약번호 (아직 추가로 수신할 데이터가 있다)
+	// message_id 253 : 대용량의 데이터를 수신할 때 사용하는 예약번호 (더이상 전송할 데이터가 없다)
 	ServerSocket::ProcessRecvData(ah_socket, a_msg_id, ap_recv_data, a_body_size);
 	
 	
@@ -82,6 +85,11 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 			}
 		}
 
+	}
+	
+	else if (a_msg_id == NM_LOGIN_DATA) // 로그인 데이터
+	{
+		
 	}
 
 	return 1; // 정상적으로 데이터를 받았으면 1반환 
@@ -204,6 +212,9 @@ afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 {
 	// ProcessToAccept: 클라이언트의 접속 처리(FD_ACCEPT 처리)
 	m_server.ProcessToAccept(wParam, lParam);
+
+	dlg_user_list = (UserAccount**)m_server.GetUserList();   // 서버에 접속한 사용자 목록을 가져온다
+	
 	return 0;
 }
 
@@ -281,9 +292,6 @@ void CServerDlg::OnBnClickedSendBtn()
 }
 
 
-
-
-
 // '사용자 목록' 버튼 클릭
 void CServerDlg::OnBnClickedButton1()
 {
@@ -293,15 +301,14 @@ void CServerDlg::OnBnClickedButton1()
 		return;
 	}
 	
-	UserData** user_list = m_server.GetUserList(); // 서버에 접속한 전체 사용자에 대한 정보
 	CString str;
-	
+
 	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
 	{
 		// 현재 사용자가 접속 상태인지 확인한다
-		if (user_list[i]->GetHandle() != INVALID_SOCKET)
+		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
 		{
-			str += user_list[i]->GetIP();
+			str += dlg_user_list[i]->GetIP();
 			str += L"\n";
 		}
 	}
