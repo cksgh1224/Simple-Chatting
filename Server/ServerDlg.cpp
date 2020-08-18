@@ -89,6 +89,10 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 	
 	else if (a_msg_id == NM_LOGIN_DATA) // 로그인 데이터
 	{
+		CString str;
+		str.Format(L"%s 님이 접속하셨습니다", (wchar_t*)ap_recv_data); 
+		mp_parent->AddEventString(str);
+
 		
 	}
 
