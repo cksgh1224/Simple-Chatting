@@ -169,6 +169,7 @@ BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_START_BTN, &CServerDlg::OnBnClickedStartBtn)
 	ON_BN_CLICKED(IDC_SEND_BTN, &CServerDlg::OnBnClickedSendBtn)
 	ON_BN_CLICKED(IDC_DISCONNECT_BTN, &CServerDlg::OnBnClickedDisconnectBtn)
+	ON_BN_CLICKED(IDC_SEND2_BTN, &CServerDlg::OnBnClickedSend2Btn)
 END_MESSAGE_MAP()
 
 
@@ -207,7 +208,9 @@ BOOL CServerDlg::OnInitDialog()
 
 	// '전송', '연결해제' 버튼 비활성화
 	GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
+	GetDlgItem(IDC_SEND2_BTN)->EnableWindow(FALSE);
 	GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
+
 
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
@@ -310,6 +313,7 @@ void CServerDlg::OnBnClickedStartBtn()
 
 		GetDlgItem(IDC_START_BTN)->EnableWindow(FALSE);
 		GetDlgItem(IDC_SEND_BTN)->EnableWindow(TRUE);
+		GetDlgItem(IDC_SEND2_BTN)->EnableWindow(TRUE);
 		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(TRUE);
 	}
 	else // StartServer 에서 에러 발생
@@ -397,4 +401,56 @@ void CServerDlg::OnBnClickedDisconnectBtn()
 		}
 	}
 
+}
+
+
+// '전송(선택)' 버튼 클릭 이벤트
+// 특정 사용자에게만 메시지 전송
+void CServerDlg::OnBnClickedSend2Btn()
+{
+	// m_user_list 에서 선택한 셀의 텍스트를 가져온다
+	CString id;
+	int n = m_user_list.GetCurSel();
+	if (n == -1) // 선택된 셀이 없으면
+	{
+		MessageBox(L"메시지를 보낼 사용자를 선택해주세요", NULL, MB_OK);
+		return;
+	}
+
+	m_user_list.GetText(n, id);
+
+
+	// strtok 함수의 매개변수로 사용하기 위해 CString 문자열을 char*로 변환한다
+	char* ch = new char[id.GetLength() + 1];
+	WideCharToMultiByte(CP_ACP, 0, id, -1, ch, id.GetLength() + 1, NULL, NULL); // 유니코드 -> 멀티바이트 변환
+
+
+	// 문자열 파싱 (strtok)
+	char del[] = " ";     // 구분자
+	ch = strtok(ch, del); // 문자열 파싱 (ch문자열을 del구분자로 나눈다)
+
+	id = (CString)ch;
+
+	delete[] ch;
+
+
+	CString chat;
+	GetDlgItemText(IDC_CHAT2_EDIT, chat);
+
+	CString str;
+	str.Format(L"Server : %s", chat);
+
+	// 추출한 ID를 비교하여 해당 소켓을 제거
+	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+	{
+		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
+		{
+			if (dlg_user_list[i]->GetID() == id)
+			{
+				m_server.SendFrameData(dlg_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
+			}
+		}
+	}
+
+	SetDlgItemText(IDC_CHAT2_EDIT, L"");
 }

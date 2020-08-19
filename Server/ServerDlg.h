@@ -99,4 +99,5 @@ public:
 	afx_msg void OnBnClickedDisconnectBtn();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 
+	afx_msg void OnBnClickedSend2Btn();
 };
