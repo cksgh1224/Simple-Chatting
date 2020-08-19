@@ -56,6 +56,7 @@ BEGIN_MESSAGE_MAP(CClientDlg, CDialogEx)
 	ON_MESSAGE(26002, &CClientDlg::OnReadAndClose)
 	ON_BN_CLICKED(IDC_CONNECT_BTN, &CClientDlg::OnBnClickedConnectBtn)
 	ON_BN_CLICKED(IDC_DISCONNECT_BTN, &CClientDlg::OnBnClickedDisconnectBtn)
+	ON_BN_CLICKED(IDC_DELETECHAT_BTN, &CClientDlg::OnBnClickedDeletechatBtn)
 END_MESSAGE_MAP()
 
 
@@ -84,6 +85,8 @@ BOOL CClientDlg::OnInitDialog()
 	GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE); 
 	GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
 	
+	SetDlgItemText(IDC_SHOWID_EDIT, user_data.GetID());
+
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -237,7 +240,7 @@ void CClientDlg::OnBnClickedConnectBtn()
 	}
 }
 
-// '접속 해제' 버튼 클릭
+// '접속 해제' 버튼 클릭 이벤트
 void CClientDlg::OnBnClickedDisconnectBtn()
 {
 	if (m_client.IsConnected()) // 서버에 접속중 이면
@@ -253,4 +256,11 @@ void CClientDlg::OnBnClickedDisconnectBtn()
 
 		GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
 	}
+}
+
+
+// '지우개' 버튼 클릭 이벤트
+void CClientDlg::OnBnClickedDeletechatBtn()
+{
+	m_event_list.ResetContent();
 }

@@ -60,9 +60,7 @@ public:
 	virtual ~CServerDlg();
 
 	void AddEventString(CString parm_string); // m_event_list 메시지 추가 (채팅 메시지)
-
 	void AddUserString(CString parm_string);  // m_user_list 메시지 추가 (사용자 목록)
-
 	void ResetUserString();                   // m_user_list 목록 초기화
 	
 	void SetUserList(UserData** a_user_list) { dlg_user_list = a_user_list; }
@@ -101,4 +99,5 @@ public:
 
 	afx_msg void OnBnClickedSend2Btn();
 	afx_msg void OnBnClickedUserdataBtn();
+	afx_msg void OnBnClickedDeletechatBtn();
 };

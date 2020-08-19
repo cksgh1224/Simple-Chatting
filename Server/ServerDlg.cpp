@@ -212,6 +212,7 @@ BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_DISCONNECT_BTN, &CServerDlg::OnBnClickedDisconnectBtn)
 	ON_BN_CLICKED(IDC_SEND2_BTN, &CServerDlg::OnBnClickedSend2Btn)
 	ON_BN_CLICKED(IDC_USERDATA_BTN, &CServerDlg::OnBnClickedUserdataBtn)
+	ON_BN_CLICKED(IDC_DELETECHAT_BTN, &CServerDlg::OnBnClickedDeletechatBtn)
 END_MESSAGE_MAP()
 
 
@@ -500,7 +501,7 @@ void CServerDlg::OnBnClickedSend2Btn()
 }
 
 
-// '사용자 정보' 버튼 이벤트
+// '사용자 정보' 버튼 클릭 이벤트
 void CServerDlg::OnBnClickedUserdataBtn()
 {
 	int n = m_user_list.GetCurSel();
@@ -539,4 +540,11 @@ void CServerDlg::OnBnClickedUserdataBtn()
 	}
 
 
+}
+
+
+// '지우개' 버튼 클릭 이벤트
+void CServerDlg::OnBnClickedDeletechatBtn()
+{
+	m_event_list.ResetContent();
 }

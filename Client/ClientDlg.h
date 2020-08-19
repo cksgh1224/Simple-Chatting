@@ -69,4 +69,5 @@ protected:
 public:
 	afx_msg void OnBnClickedConnectBtn();
 	afx_msg void OnBnClickedDisconnectBtn();
+	afx_msg void OnBnClickedDeletechatBtn();
 };
