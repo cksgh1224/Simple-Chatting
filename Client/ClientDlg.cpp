@@ -224,8 +224,11 @@ void CClientDlg::OnBnClickedConnectBtn()
 
 			// 로그인 정보(ID) 서버에게 보내기...
 			CString id = user_data.GetID();
-			m_client.SendFrameData(NM_LOGIN_DATA, (char*)(const wchar_t*)id, (id.GetLength() + 1) * 2);
-
+			CString pw = user_data.GetPW();
+			CString name = user_data.GetName();
+			CString str;
+			str.Format(L"%s/%s/%s", id, pw, name);
+			m_client.SendFrameData(NM_LOGIN_DATA, (char*)(const wchar_t*)str, (str.GetLength() + 1) * 2);
 		}
 	}
 	else

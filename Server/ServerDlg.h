@@ -100,4 +100,5 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 
 	afx_msg void OnBnClickedSend2Btn();
+	afx_msg void OnBnClickedUserdataBtn();
 };

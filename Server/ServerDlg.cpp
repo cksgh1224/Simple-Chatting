@@ -61,7 +61,7 @@ void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 		if (mp_user_list[i]->GetHandle() != INVALID_SOCKET)
 		{
 			CString str;
-			str.Format(L"%s \t (%s)", mp_user_list[i]->GetID(), mp_user_list[i]->GetIP());
+			str.Format(L"%s (%s)", mp_user_list[i]->GetID(), mp_user_list[i]->GetIP());
 			mp_parent->AddUserString(str);
 		}
 	}
@@ -112,18 +112,59 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 
 	}
 	
-	// 로그인 데이터 (ap_recv_data: 사용자 id가 넘어온다)
+	// 로그인 데이터 (ap_recv_data: 사용자 'id/pw/name'이 넘어온다)
 	else if (a_msg_id == NM_LOGIN_DATA) 
 	{
 		TR("MyServer::ProcessRecvData - 수신된 데이터 (로그인 데이터)\n");
 		
+	
+		CString s1 = (wchar_t*)ap_recv_data;
+		char* ch = new char[s1.GetLength() + 1];
+		WideCharToMultiByte(CP_ACP, 0, s1, -1, ch, (s1.GetLength() + 1)*2, NULL, NULL); // 유니코드 -> 멀티바이트 변환
+		
+
+		// 문자열 자르고 보관하기
+		char* sArr[3] = { NULL, };             // 넘어온 로그인 데이터를 구분자로 구분하여 각각 저장할 포인터 배열 (0:id, 1:pw, 2:name)
+		int i = 0;                             // 문자열 포인터 배열의 인덱스
+
+		char* ptr = strtok(ch, "/"); // 슬러시(/) 문자열을 기준으로 문자열을 자른다
+		while (ptr != NULL)                    // 자른 문자열이 나오지 않을때 까지 반복
+		{
+			sArr[i] = ptr;                     // 자른 문자열의 메모리 주소를 문자열 포인터 배열에 저장
+			i++;
+			ptr = strtok(NULL, "/");           // 다음 문자열을 잘라서 포인터를 반환
+		}
+
+
+		// char -> wchar_t
+		wchar_t* pStr;
+
+		// ID 설정
+		int strSize = MultiByteToWideChar(CP_ACP, 0, sArr[0], -1, NULL, NULL);       //멀티 바이트 크기 계산 길이 반환
+		pStr = new WCHAR[strSize];                                                   //wchar_t 메모리 할당
+		MultiByteToWideChar(CP_ACP, 0, sArr[0], strlen(sArr[0]) + 1, pStr, strSize); // 멀티바이트 -> 유니코드
+		p_user->SetID(pStr);
+
+		// PW 설정
+		strSize = MultiByteToWideChar(CP_ACP, 0, sArr[1], -1, NULL, NULL);       
+		pStr = new WCHAR[strSize];                                                 
+		MultiByteToWideChar(CP_ACP, 0, sArr[1], strlen(sArr[1]) + 1, pStr, strSize); 
+		p_user->SetPW(pStr);
+
+		// Name 설정
+		strSize = MultiByteToWideChar(CP_ACP, 0, sArr[2], -1, NULL, NULL);       
+		pStr = new WCHAR[strSize];                                                  
+		MultiByteToWideChar(CP_ACP, 0, sArr[2], strlen(sArr[2]) + 1, pStr, strSize);
+		p_user->SetName(pStr);
+		
+		
+		
 		CString str;
-		str.Format(L"%s 님이 접속하셨습니다 (%s)", (wchar_t*)ap_recv_data, p_user->GetIP());
+		str.Format(L"%s 님이 접속하셨습니다 (%s)", p_user->GetID(), p_user->GetIP());
 		mp_parent->AddEventString(str);
 
-		p_user->SetID((wchar_t*)ap_recv_data);
 
-		str.Format(L"%s \t (%s)", p_user->GetID(), p_user->GetIP());
+		str.Format(L"%s (%s)", p_user->GetID(), p_user->GetIP());
 		mp_parent->AddUserString(str);
 	}
 
@@ -170,6 +211,7 @@ BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_SEND_BTN, &CServerDlg::OnBnClickedSendBtn)
 	ON_BN_CLICKED(IDC_DISCONNECT_BTN, &CServerDlg::OnBnClickedDisconnectBtn)
 	ON_BN_CLICKED(IDC_SEND2_BTN, &CServerDlg::OnBnClickedSend2Btn)
+	ON_BN_CLICKED(IDC_USERDATA_BTN, &CServerDlg::OnBnClickedUserdataBtn)
 END_MESSAGE_MAP()
 
 
@@ -206,10 +248,11 @@ BOOL CServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 
-	// '전송', '연결해제' 버튼 비활성화
+	// '전송', '연결해제', '사용자 정보' 버튼 비활성화
 	GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
 	GetDlgItem(IDC_SEND2_BTN)->EnableWindow(FALSE);
 	GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
+	GetDlgItem(IDC_USERDATA_BTN)->EnableWindow(FALSE);
 
 
 
@@ -315,6 +358,7 @@ void CServerDlg::OnBnClickedStartBtn()
 		GetDlgItem(IDC_SEND_BTN)->EnableWindow(TRUE);
 		GetDlgItem(IDC_SEND2_BTN)->EnableWindow(TRUE);
 		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(TRUE);
+		GetDlgItem(IDC_USERDATA_BTN)->EnableWindow(TRUE);
 	}
 	else // StartServer 에서 에러 발생
 	{
@@ -372,12 +416,12 @@ void CServerDlg::OnBnClickedDisconnectBtn()
 		return;
 	}
 
-	m_user_list.GetText(n, str);
+	m_user_list.GetText(n, str); // 선택된 셀(n)의 문자열을 가져옴
 
 
 	// strtok 함수의 매개변수로 사용하기 위해 CString 문자열을 char*로 변환한다
 	char* ch = new char[str.GetLength() + 1];
-	WideCharToMultiByte(CP_ACP, 0, str, -1, ch, str.GetLength() + 1, NULL, NULL); // 유니코드 -> 멀티바이트 변환
+	WideCharToMultiByte(CP_ACP, 0, str, -1, ch, (str.GetLength() + 1) * 2, NULL, NULL); // 유니코드 -> 멀티바이트 변환
 
 
 	// 문자열 파싱 (strtok)
@@ -416,13 +460,13 @@ void CServerDlg::OnBnClickedSend2Btn()
 		MessageBox(L"메시지를 보낼 사용자를 선택해주세요", NULL, MB_OK);
 		return;
 	}
-
+	
 	m_user_list.GetText(n, id);
 
 
 	// strtok 함수의 매개변수로 사용하기 위해 CString 문자열을 char*로 변환한다
 	char* ch = new char[id.GetLength() + 1];
-	WideCharToMultiByte(CP_ACP, 0, id, -1, ch, id.GetLength() + 1, NULL, NULL); // 유니코드 -> 멀티바이트 변환
+	WideCharToMultiByte(CP_ACP, 0, id, -1, ch, (id.GetLength() + 1) * 2, NULL, NULL); // 유니코드 -> 멀티바이트 변환
 
 
 	// 문자열 파싱 (strtok)
@@ -453,4 +497,46 @@ void CServerDlg::OnBnClickedSend2Btn()
 	}
 
 	SetDlgItemText(IDC_CHAT2_EDIT, L"");
+}
+
+
+// '사용자 정보' 버튼 이벤트
+void CServerDlg::OnBnClickedUserdataBtn()
+{
+	int n = m_user_list.GetCurSel();
+	if (n == -1) // 선택된 셀이 없으면
+	{
+		MessageBox(L"메시지를 보낼 사용자를 선택해주세요", NULL, MB_OK);
+		return;
+	}
+	
+	CString id;
+	m_user_list.GetText(n, id);
+
+
+	// strtok 함수의 매개변수로 사용하기 위해 CString 문자열을 char*로 변환한다
+	char* ch = new char[id.GetLength() + 1];
+	WideCharToMultiByte(CP_ACP, 0, id, -1, ch, (id.GetLength() + 1) * 2, NULL, NULL); // 유니코드 -> 멀티바이트 변환
+
+
+	// 문자열 파싱 (strtok)
+	char del[] = " ";     // 구분자
+	ch = strtok(ch, del); // 문자열 파싱 (ch문자열을 del구분자로 나눈다)
+	id = (CString)ch;
+	delete[] ch;
+
+	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+	{
+		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
+		{
+			if (dlg_user_list[i]->GetID() == id)
+			{
+				CString str;
+				str.Format(L"IP: %s\nId: %s\nPw: %s\nName: %s", dlg_user_list[i]->GetIP(), dlg_user_list[i]->GetID(), dlg_user_list[i]->GetPW(), dlg_user_list[i]->GetName());
+				MessageBox(str, NULL, MB_OK);
+			}
+		}
+	}
+
+
 }
