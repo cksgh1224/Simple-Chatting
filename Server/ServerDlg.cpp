@@ -25,7 +25,7 @@
 void MyServer::AddWorkForAccept(UserData* ap_user)
 {
 	TR("MyServer::AddWorkForAccept - Accept 시에 추가적으로 해야할 작업 처리\n");
-
+	
 	user_count++;
 }
 
@@ -53,7 +53,22 @@ void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 	str.Format(L"%s 님이 접속을 해제했습니다 (%s)", ap_user->GetID(), ap_user->GetIP());
 	mp_parent->AddEventString(str);
 	
+
+
+	mp_parent->ResetUserString();
+	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+	{	
+		if (mp_user_list[i]->GetHandle() != INVALID_SOCKET)
+		{
+			CString str;
+			str.Format(L"%s \t (%s)", mp_user_list[i]->GetID(), mp_user_list[i]->GetIP());
+			mp_parent->AddUserString(str);
+		}
+	}
+
 	user_count--;
+
+	mp_parent->SetUserList(GetUserList());
 }
 
 
@@ -73,7 +88,8 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 	
 	UserData* p_user = ServerSocket::FindUserData(ah_socket); // 데이터를 보낸 클라이언트가 어떤 것인지 찾는다
 	
-	if (a_msg_id == NM_CHAT_DATA) // 수신된 데이터가 채팅 데이터인 경우
+	// 수신된 데이터가 채팅 데이터인 경우
+	if (a_msg_id == NM_CHAT_DATA) 
 	{
 		TR("MyServer::ProcessRecvData - 수신된 데이터 (채팅 데이터)\n");
 
@@ -82,7 +98,7 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 		mp_parent->AddEventString(str);
 		
 		// 서버에 연결된 모든 클라이언트들에게 수신된 데이터를 전송
-		for (int i = 0; i < user_count; i++)
+		for (int i = 0; i < MAX_CLIENT_COUNT; i++)
 		{
 			// 현재 사용자가 접속 상태인지 확인한다
 			if (mp_user_list[i]->GetHandle() != INVALID_SOCKET)
@@ -96,24 +112,19 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 
 	}
 	
-	else if (a_msg_id == NM_LOGIN_DATA) // 로그인 데이터
+	// 로그인 데이터 (ap_recv_data: 사용자 id가 넘어온다)
+	else if (a_msg_id == NM_LOGIN_DATA) 
 	{
 		TR("MyServer::ProcessRecvData - 수신된 데이터 (로그인 데이터)\n");
 		
 		CString str;
-		str.Format(L"%s 님이 접속하셨습니다 (%s)", (wchar_t*)ap_recv_data, mp_user_list[user_count-1]->GetIP());
+		str.Format(L"%s 님이 접속하셨습니다 (%s)", (wchar_t*)ap_recv_data, p_user->GetIP());
 		mp_parent->AddEventString(str);
 
-		mp_user_list[user_count - 1]->SetID((wchar_t*)ap_recv_data);
+		p_user->SetID((wchar_t*)ap_recv_data);
 
-		
-		mp_parent->ResetUserString();
-		for (int i = 0; i < user_count; i++)
-		{
-			CString str;
-			str.Format(L"%s \t (%s)", mp_user_list[i]->GetID(), mp_user_list[i]->GetIP());
-			mp_parent->AddUserString(str);
-		}
+		str.Format(L"%s \t (%s)", p_user->GetID(), p_user->GetIP());
+		mp_parent->AddUserString(str);
 	}
 
 	return 1; // 정상적으로 데이터를 받았으면 1반환 
@@ -172,7 +183,7 @@ void CServerDlg::AddEventString(CString parm_string)
 void CServerDlg::AddUserString(CString parm_string)
 {
 	int index = m_user_list.InsertString(-1, parm_string);
-	m_event_list.SetCurSel(index);
+	m_user_list.SetCurSel(index);
 }
 
 // m_user_list 목록 초기화
@@ -269,8 +280,8 @@ afx_msg LRESULT CServerDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 {
 	TR("CServerDlg::OnReadAndClose - 접속한 클라이언트가 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다 (25002)\n");
 	
-	// ProcessClientEvent : 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리 함수)
-	m_server.ProcessClientEvent(wParam, lParam); // id값 들어감
+	m_server.ProcessClientEvent(wParam, lParam); // ProcessClientEvent : 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리 함수)
+
 	return 0;
 }
 
@@ -375,7 +386,7 @@ void CServerDlg::OnBnClickedDisconnectBtn()
 
 
 	// 추출한 ID를 비교하여 해당 소켓을 제거
-	for (int i = 0; i < m_server.GetUserCount(); i++)
+	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
 	{
 		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
 		{
@@ -383,20 +394,6 @@ void CServerDlg::OnBnClickedDisconnectBtn()
 			{
 				m_server.DisconnectSocket(dlg_user_list[i]->GetHandle(), 0);
 			}
-		}
-	}
-
-
-	ResetUserString(); // 리스트 박스 목록 초기화
-
-	// 사용자 정보를 리스트 박스에 보여주기
-	for (int i = 0; i < m_server.GetUserCount(); i++)
-	{
-		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
-		{
-			CString str;
-			str.Format(L"%s \t (%s)", dlg_user_list[i]->GetID(), dlg_user_list[i]->GetIP());
-			AddUserString(str);
 		}
 	}
 

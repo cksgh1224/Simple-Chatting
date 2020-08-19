@@ -65,6 +65,8 @@ public:
 
 	void ResetUserString();                   // m_user_list 목록 초기화
 	
+	void SetUserList(UserData** a_user_list) { dlg_user_list = a_user_list; }
+
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
