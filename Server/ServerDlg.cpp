@@ -8,6 +8,8 @@
 #include "ServerDlg.h"
 #include "afxdialogex.h"
 
+#include <string.h> // strtok 사용 (문자열 파싱)
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -22,9 +24,7 @@
 // 매개변수로 넘어오는 UserData* ap_user는 현재 접속한 사용자(클라이언트)의 정보를 담고있다
 void MyServer::AddWorkForAccept(UserData* ap_user)
 {
-	CString str;
-	str.Format(L"%s 에서 사용자가 접속했습니다!", ap_user->GetIP());
-	mp_parent->AddEventString(str);
+	TR("MyServer::AddWorkForAccept - Accept 시에 추가적으로 해야할 작업 처리\n");
 
 	user_count++;
 }
@@ -33,6 +33,8 @@ void MyServer::AddWorkForAccept(UserData* ap_user)
 // 최대 사용자수 초과시에 추가적으로 해야할 작업 처리
 void MyServer::ShowLimitError(const wchar_t* ap_ip_address)
 {
+	TR("MyServer::ShowLimitError - 최대 사용자수 초과시에 추가적으로 해야할 작업 처리\n");
+	
 	CString str;
 	str.Format(L"최대 접속인원 초과!");
 	mp_parent->AddEventString(str);
@@ -44,10 +46,13 @@ void MyServer::ShowLimitError(const wchar_t* ap_ip_address)
 // a_error_code : 0이면 정상종료, -1이면 키값이 유효하지 않아서 종료, -2이면 바디정보 수신중에 오류 발생
 void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 {
+	TR("MyServer::AddWorkForCloseUser - 클라이언트 접속 해제시에 추가적으로 해야할 작업 처리\n");
+	// CloseSocket을 하기 전 (소켓 핸들이 아직 살아있는 상태)
+	
 	CString str;
-	str.Format(L"%s 에서 사용자가 접속을 해제했습니다!", ap_user->GetIP());
+	str.Format(L"%s 님이 접속을 해제했습니다 (%s)", ap_user->GetID(), ap_user->GetIP());
 	mp_parent->AddEventString(str);
-
+	
 	user_count--;
 }
 
@@ -57,6 +62,8 @@ void MyServer::AddWorkForCloseUser(UserData* ap_user, int a_error_code)
 // ap_recv_data : 클라이언트가 보낸 데엍, a_body_size: 클라이언트가 보낸 데이터의 body size (헤더를 뺀 바디 크기)
 int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size)
 {
+	TR("MyServer::ProcessRecvData - 수신된 데이터를 처리하는 함수\n");
+	
 	// 대용량 데이터가 전송 또는 수신될 때, 필요한 기본 코드를 수행
 	// message_id 251 : 클라이언트에게 대용량의 데이터를 전송할때 사용하는 예약번호
 	// message_id 252 : 대용량의 데이터를 수신할 때 사용하는 예약번호 (아직 추가로 수신할 데이터가 있다)
@@ -68,12 +75,14 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 	
 	if (a_msg_id == NM_CHAT_DATA) // 수신된 데이터가 채팅 데이터인 경우
 	{
+		TR("MyServer::ProcessRecvData - 수신된 데이터 (채팅 데이터)\n");
+
 		CString str;
-		str.Format(L"%s : %s", p_user->GetIP(), (wchar_t*)ap_recv_data); // (wchar_t*)ap_recv_data 유니코드로 형변환
+		str.Format(L"%s : %s", p_user->GetID(), (wchar_t*)ap_recv_data); // (wchar_t*)ap_recv_data 유니코드로 형변환
 		mp_parent->AddEventString(str);
 		
 		// 서버에 연결된 모든 클라이언트들에게 수신된 데이터를 전송
-		for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+		for (int i = 0; i < user_count; i++)
 		{
 			// 현재 사용자가 접속 상태인지 확인한다
 			if (mp_user_list[i]->GetHandle() != INVALID_SOCKET)
@@ -89,11 +98,22 @@ int MyServer::ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap
 	
 	else if (a_msg_id == NM_LOGIN_DATA) // 로그인 데이터
 	{
+		TR("MyServer::ProcessRecvData - 수신된 데이터 (로그인 데이터)\n");
+		
 		CString str;
-		str.Format(L"%s 님이 접속하셨습니다", (wchar_t*)ap_recv_data); 
+		str.Format(L"%s 님이 접속하셨습니다 (%s)", (wchar_t*)ap_recv_data, mp_user_list[user_count-1]->GetIP());
 		mp_parent->AddEventString(str);
 
+		mp_user_list[user_count - 1]->SetID((wchar_t*)ap_recv_data);
+
 		
+		mp_parent->ResetUserString();
+		for (int i = 0; i < user_count; i++)
+		{
+			CString str;
+			str.Format(L"%s \t (%s)", mp_user_list[i]->GetID(), mp_user_list[i]->GetIP());
+			mp_parent->AddUserString(str);
+		}
 	}
 
 	return 1; // 정상적으로 데이터를 받았으면 1반환 
@@ -115,12 +135,19 @@ CServerDlg::CServerDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_SERVER_DIALOG, pParent), m_server(this) // m_server(this): 객체를 생성할 때 대화상자의 주소를 넘겨준다
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	dlg_user_list = NULL;
+}
+
+CServerDlg::~CServerDlg()
+{
+	delete dlg_user_list;
 }
 
 void CServerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST1, m_event_list);
+	DDX_Control(pDX, IDC_LIST2, m_user_list);
 }
 
 BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
@@ -130,15 +157,28 @@ BEGIN_MESSAGE_MAP(CServerDlg, CDialogEx)
 	ON_MESSAGE(25002, &CServerDlg::OnReadAndClose)
 	ON_BN_CLICKED(IDC_START_BTN, &CServerDlg::OnBnClickedStartBtn)
 	ON_BN_CLICKED(IDC_SEND_BTN, &CServerDlg::OnBnClickedSendBtn)
-	ON_BN_CLICKED(IDC_USER_BTN, &CServerDlg::OnBnClickedButton1)
+	ON_BN_CLICKED(IDC_DISCONNECT_BTN, &CServerDlg::OnBnClickedDisconnectBtn)
 END_MESSAGE_MAP()
 
 
-// 리스트 박스 메시지 추가
+// m_event_list 메시지 추가 (채팅 메시지)
 void CServerDlg::AddEventString(CString parm_string)
 {
 	int index = m_event_list.InsertString(-1, parm_string); // 리스트 목록 끝에(-1) 문자열(parm_string) 추가. 반환값(index): 추가되는 위치
 	m_event_list.SetCurSel(index);                          // 추가한 곳(index) 커서 활성화
+}
+
+// m_user_list 메시지 추가 (사용자 목록)
+void CServerDlg::AddUserString(CString parm_string)
+{
+	int index = m_user_list.InsertString(-1, parm_string);
+	m_event_list.SetCurSel(index);
+}
+
+// m_user_list 목록 초기화
+void CServerDlg::ResetUserString()
+{
+	m_user_list.ResetContent();
 }
 
 
@@ -154,11 +194,10 @@ BOOL CServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 
-
+	// '전송', '연결해제' 버튼 비활성화
 	GetDlgItem(IDC_SEND_BTN)->EnableWindow(FALSE);
-	GetDlgItem(IDC_USER_BTN)->EnableWindow(FALSE);
+	GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(FALSE);
 
-	
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -214,11 +253,12 @@ BOOL CServerDlg::PreTranslateMessage(MSG* pMsg)
 // FD_ACCEPT : 25001 메시지
 afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 {
-	// ProcessToAccept: 클라이언트의 접속 처리(FD_ACCEPT 처리)
-	m_server.ProcessToAccept(wParam, lParam);
+	TR("CServerDlg::OnAcceptUser - 새로운 클라이언트가 접속했을 때 발생하는 메시지를 처리한다 (25001)\n");
+		
+	m_server.ProcessToAccept(wParam, lParam); // ProcessToAccept: 클라이언트의 접속 처리(FD_ACCEPT 처리)
 
-	dlg_user_list = m_server.GetUserList();   // 서버에 접속한 사용자 목록을 가져온다
-	
+	dlg_user_list = m_server.GetUserList();   // 서버에 접속한 사용자 목록을 가져온다 (최초 호출시 ip값만 들어간다)
+
 	return 0;
 }
 
@@ -227,8 +267,10 @@ afx_msg LRESULT CServerDlg::OnAcceptUser(WPARAM wParam, LPARAM lParam)
 // FD_READ, FD_CLOSE : 25002 메시지
 afx_msg LRESULT CServerDlg::OnReadAndClose(WPARAM wParam, LPARAM lParam)
 {
+	TR("CServerDlg::OnReadAndClose - 접속한 클라이언트가 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다 (25002)\n");
+	
 	// ProcessClientEvent : 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리 함수)
-	m_server.ProcessClientEvent(wParam, lParam);
+	m_server.ProcessClientEvent(wParam, lParam); // id값 들어감
 	return 0;
 }
 
@@ -257,7 +299,7 @@ void CServerDlg::OnBnClickedStartBtn()
 
 		GetDlgItem(IDC_START_BTN)->EnableWindow(FALSE);
 		GetDlgItem(IDC_SEND_BTN)->EnableWindow(TRUE);
-		GetDlgItem(IDC_USER_BTN)->EnableWindow(TRUE);
+		GetDlgItem(IDC_DISCONNECT_BTN)->EnableWindow(TRUE);
 	}
 	else // StartServer 에서 에러 발생
 	{
@@ -276,18 +318,16 @@ void CServerDlg::OnBnClickedSendBtn()
 		return;
 	}
 	
-	UserData** user_list = m_server.GetUserList(); // 서버에 접속한 전체 사용자에 대한 정보
-	
 	CString str, text;
 	GetDlgItemText(IDC_CHAT_EDIT, text);
 	str.Format(L"%s : %s", L"Server", text);
 
-	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+	for (int i = 0; i < m_server.GetUserCount(); i++)
 	{
 		// 현재 사용자가 접속 상태인지 확인한다
-		if (user_list[i]->GetHandle() != INVALID_SOCKET)
+		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
 		{
-			m_server.SendFrameData(user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2); // 데이터 전송
+			m_server.SendFrameData(dlg_user_list[i]->GetHandle(), NM_CHAT_DATA, (const char*)(const wchar_t*)str, (str.GetLength() + 1) * 2); // 데이터 전송
 		}
 	}
 
@@ -296,26 +336,68 @@ void CServerDlg::OnBnClickedSendBtn()
 }
 
 
-// '사용자 목록' 버튼 클릭
-void CServerDlg::OnBnClickedButton1()
+
+
+// '연결해제' 버튼 클릭 이벤트
+void CServerDlg::OnBnClickedDisconnectBtn()
 {
 	if (m_server.GetUserCount() == 0)
 	{
 		MessageBox(L"서버에 접속한 사용자가 없습니다", NULL, MB_OK);
 		return;
 	}
-	
-	CString str;
 
-	for (int i = 0; i < MAX_CLIENT_COUNT; i++)
+
+	// m_user_list 에서 선택한 셀의 텍스트를 가져온다
+	CString str;
+	int n = m_user_list.GetCurSel();
+	if (n == -1) // 선택된 셀이 없으면
 	{
-		// 현재 사용자가 접속 상태인지 확인한다
+		MessageBox(L"연결을 해제할 사용자를 선택해주세요", NULL, MB_OK);
+		return;
+	}
+
+	m_user_list.GetText(n, str);
+
+
+	// strtok 함수의 매개변수로 사용하기 위해 CString 문자열을 char*로 변환한다
+	char* ch = new char[str.GetLength() + 1];
+	WideCharToMultiByte(CP_ACP, 0, str, -1, ch, str.GetLength() + 1, NULL, NULL); // 유니코드 -> 멀티바이트 변환
+
+
+	// 문자열 파싱 (strtok)
+	char del[] = " ";     // 구분자
+	ch = strtok(ch, del); // 문자열 파싱 (ch문자열을 del구분자로 나눈다)
+
+	str = (CString)ch;
+	
+	delete[] ch;
+
+
+	// 추출한 ID를 비교하여 해당 소켓을 제거
+	for (int i = 0; i < m_server.GetUserCount(); i++)
+	{
 		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
 		{
-			str += dlg_user_list[i]->GetIP();
-			str += L"\n";
+			if (dlg_user_list[i]->GetID() == str)
+			{
+				m_server.DisconnectSocket(dlg_user_list[i]->GetHandle(), 0);
+			}
 		}
 	}
 
-	MessageBox(str, L"사용자 목록", MB_OK);
+
+	ResetUserString(); // 리스트 박스 목록 초기화
+
+	// 사용자 정보를 리스트 박스에 보여주기
+	for (int i = 0; i < m_server.GetUserCount(); i++)
+	{
+		if (dlg_user_list[i]->GetHandle() != INVALID_SOCKET)
+		{
+			CString str;
+			str.Format(L"%s \t (%s)", dlg_user_list[i]->GetID(), dlg_user_list[i]->GetIP());
+			AddUserString(str);
+		}
+	}
+
 }

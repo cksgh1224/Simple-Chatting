@@ -222,7 +222,7 @@ void CClientDlg::OnBnClickedConnectBtn()
 			m_client.ConnectToServer(ip, _ttoi(port), m_hWnd); // _ttoi : cstring -> int
 
 
-			// 로그인 정보 서버에게 보내기...
+			// 로그인 정보(ID) 서버에게 보내기...
 			CString id = user_data.GetID();
 			m_client.SendFrameData(NM_LOGIN_DATA, (char*)(const wchar_t*)id, (id.GetLength() + 1) * 2);
 

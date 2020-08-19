@@ -16,8 +16,7 @@ class MyServer : public ServerSocket
 private:
 	CServerDlg* mp_parent; // 대화상자 객체의 주소를 저장할 변수 (리스트 박스 작업을 할 때 사용)
 	
-
-	int user_count;        // 접속한 사용자 수 (dlg 클래스에 선언하는게 맞지 않나? 어떻게 사용하지?)
+	int user_count;        // 접속한 사용자 수
 
 public:
 	// CServerDlg 대화상자의 m_event_list(리스트 박스) 를 사용하기 위해 객체를 생성할 때 대화상자의 주소를 넘겨준다
@@ -42,7 +41,6 @@ public:
 	virtual int ProcessRecvData(SOCKET ah_socket, unsigned char a_msg_id, char* ap_recv_data, BS a_body_size);
 
 
-
 	int inline GetUserCount() { return user_count; } // 서버에 접속한 사용자 수 
 };
 
@@ -55,11 +53,18 @@ private:
 
 	UserData** dlg_user_list;  // 서버에 접속한 전체 사용자에 대한 정보
 
+
 // 생성입니다.
 public:
 	CServerDlg(CWnd* pParent = nullptr);	// CServerDlg 생성자에 m_server(this) 추가
+	virtual ~CServerDlg();
+
+	void AddEventString(CString parm_string); // m_event_list 메시지 추가 (채팅 메시지)
+
+	void AddUserString(CString parm_string);  // m_user_list 메시지 추가 (사용자 목록)
+
+	void ResetUserString();                   // m_user_list 목록 초기화
 	
-	void AddEventString(CString parm_string); // 리스트 박스 메시지 추가
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -80,7 +85,8 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 private:
-	CListBox m_event_list;
+	CListBox m_event_list; // 채팅 리스트 박스
+	CListBox m_user_list;  // 사용자 리스트 박스
 protected:
 	
 	afx_msg LRESULT OnAcceptUser(WPARAM wParam, LPARAM lParam);
@@ -88,6 +94,7 @@ protected:
 public:
 	afx_msg void OnBnClickedStartBtn();
 	afx_msg void OnBnClickedSendBtn();
+	afx_msg void OnBnClickedDisconnectBtn();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
-	afx_msg void OnBnClickedButton1();
+
 };
