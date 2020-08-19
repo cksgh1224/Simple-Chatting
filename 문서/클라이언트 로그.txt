@@ -1,0 +1,37 @@
+[클라이언트]
+
+로그인
+My_Odbc::ExecQuery(select)
+My_Odbc::ExecQuery(select) - SQL 명령문 실행 성공
+My_Odbc::ExecQuery(select) - SET_RECORD_INFO 성공
+
+
+서버 접속
+ClientSocket::ConnectToServer - 서버에 접속하기
+ClientSocket::SendFrameData - 데이터 전송
+Socket::SendFrameData - 데이터 전송 함수 (전달된 정보를 가지고 mp_send_data 메모리에 약속된 Head 정보를 구성해서 전송)
+Socket::SendFrameData - 전송 성공
+ClientSocket::ResultOfConnection - 접속 시도에 대한 결과 처리 (FD_CONNECT)
+ClientSocket::ResultOfConnection - 서버 접속 성공
+
+
+서버에게 메시지 전송
+ClientSocket::SendFrameData - 데이터 전송
+Socket::SendFrameData - 데이터 전송 함수 (전달된 정보를 가지고 mp_send_data 메모리에 약속된 Head 정보를 구성해서 전송)
+Socket::SendFrameData - 전송 성공
+
+(서버로부터 메시지 수신)
+ClientSocket::ProcessServerEvent - 데이터 수신 처리와 서버 연결 해제에 대한 처리 (FD_READ, FD_CLOSE)
+Socket::ProcessRecvEvent - 데이터가 수신되었을 때 수신된 데이터를 처리하는 함수
+Socket::ProcessRecvEvent - 정상적인 프로토콜
+Socket::ReceiveData - 안정적인 데이터 수신 (재시도 수신)
+Socket::ReceiveData - 데이터 수신 성공
+ClientSocket::ProcessRecvData - 수신된 데이터 처리
+
+
+연결 해제
+ClientSocket::DisconnectSocket - 서버와 접속 해제
+
+
+강제 연결 해제 (서버가 강제로 연결 해제)
+ClientSocket::ProcessServerEvent - 데이터 수신 처리와 서버 연결 해제에 대한 처리 (FD_READ, FD_CLOSE)

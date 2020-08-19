@@ -1,0 +1,63 @@
+[서버]
+
+서버 서비스 시작
+ServerSocket::StartServer - 서버 서비스의 시작 (socket - bind - listen)
+ServerSocket::StartServer - 클라이언트 연결 요청 대기 (listen)
+
+
+클라이언트 접속
+CServerDlg::OnAcceptUser - 새로운 클라이언트가 접속했을 때 발생하는 메시지를 처리한다 (25001)
+ServerSocket::ProcessToAccept - 클라이언트의 접속 처리 (FD_ACCEPT 처리)
+MyServer::AddWorkForAccept - Accept 시에 추가적으로 해야할 작업 처리
+ServerSocket::ProcessToAccept - 클라이언트의 접속을 정상적으로 처리함
+
+(클라이언트가 서버에 연결될 때 로그인 정보(id)를 서버로 보낸다)
+CServerDlg::OnReadAndClose - 접속한 클라이언트가 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다 (25002)
+ServerSocket::ProcessClientEvent - 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리)
+Socket::ProcessRecvEvent - 데이터가 수신되었을 때 수신된 데이터를 처리하는 함수
+Socket::ProcessRecvEvent - 정상적인 프로토콜
+Socket::ReceiveData - 안정적인 데이터 수신 (재시도 수신)
+Socket::ReceiveData - 데이터 수신 성공
+MyServer::ProcessRecvData - 수신된 데이터를 처리하는 함수
+ServerSocket::ProcessRecvData - 수신된 데이터를 처리하는 함수
+ServerSocket::ProcessRecvData - 수신된 데이터를 정상적으로 처리함
+MyServer::ProcessRecvData - 수신된 데이터 (로그인 데이터)
+
+
+
+클라이언트에게 메시지 전송
+Socket::SendFrameData - 데이터 전송 함수 (전달된 정보를 가지고 mp_send_data 메모리에 약속된 Head 정보를 구성해서 전송)
+Socket::SendFrameData - 전송 성공
+
+
+클라이언트로부터 메시지 수신
+CServerDlg::OnReadAndClose - 접속한 클라이언트가 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다 (25002)
+ServerSocket::ProcessClientEvent - 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리)
+Socket::ProcessRecvEvent - 데이터가 수신되었을 때 수신된 데이터를 처리하는 함수
+Socket::ProcessRecvEvent - 정상적인 프로토콜
+Socket::ReceiveData - 안정적인 데이터 수신 (재시도 수신)
+Socket::ReceiveData - 데이터 수신 성공
+MyServer::ProcessRecvData - 수신된 데이터를 처리하는 함수
+ServerSocket::ProcessRecvData - 수신된 데이터를 처리하는 함수
+ServerSocket::ProcessRecvData - 수신된 데이터를 정상적으로 처리함
+MyServer::ProcessRecvData - 수신된 데이터 (채팅 데이터)
+
+(클라이언트로 부터 받은 메시지를 서버에 연결된 모든 클라이언트에게 보냄)
+Socket::SendFrameData - 데이터 전송 함수 (전달된 정보를 가지고 mp_send_data 메모리에 약속된 Head 정보를 구성해서 전송)
+Socket::SendFrameData - 전송 성공
+
+
+
+클라이언트 접속 해제
+CServerDlg::OnReadAndClose - 접속한 클라이언트가 데이터를 전송하거나 접속을 해제할 때 발생하는 메시지를 처리한다 (25002)
+ServerSocket::ProcessClientEvent - 클라이언트의 네트워크 이벤트 처리 (FD_READ, FD_CLOSE 처리)
+UserData::CloseSocket - 연결된 소켓을 닫고 초기화
+MyServer::AddWorkForCloseUser - 클라이언트 접속 해제시에 추가적으로 해야할 작업 처리
+
+
+
+클라이언트 강제 접속 해제 (서버가 해제 시킴)
+ServerSocket::DisconnectSocket - 클라이언트 접속 강제 해제
+UserData::CloseSocket - 연결된 소켓을 닫고 초기화
+UserData::CloseSocket - 소켓을 즉시 닫는다 (LINGER)
+MyServer::AddWorkForCloseUser - 클라이언트 접속 해제시에 추가적으로 해야할 작업 처리
